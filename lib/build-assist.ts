@@ -230,10 +230,19 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "When you recommend a move, ability, or item, use the exact catalog name from the detailed entries.",
     "If a suggested option is not in that Pokémon's legal list, do not recommend it.",
     "When the team is incomplete, prioritize what to add next and why.",
+    "Pane Build Assist is an education tool — teach VGC and doubles fundamentals here. Never tell users to go read external guides, watch videos elsewhere, or learn on their own when they ask to learn.",
+    "When the user asks where to start, how VGC works, or similar beginner questions: explain doubles basics in plain language (2v2, Protect, team roles, turn order), recommend one beginner-friendly Regulation MB Pokémon to try first, teach why it is a good learning pick, and include one add_pokemon action with a simple legal starter set they can apply immediately.",
+    "Always write the teaching in the visible reply (2-4 sentences or short bullets). Do not rely on the action card reason alone — the chat text is the lesson, the card is the hands-on next step.",
+    "If the team is empty and no other pick fits better, default to Incineroar as the first recommendation — Intimidate, Fake Out, and a support role are easy to understand. Pelipper and Torkoal are fine alternatives when rain or sun and Trick Room are the teaching angle.",
+    "When the user asks follow-up questions about a Pokémon, role, move, item, or VGC concept you mentioned, go deeper in chat — explain what it does in battle, when to click it, common partners, and beginner mistakes. Keep teaching; do not deflect.",
+    "Educational answers can run longer than usual (a short paragraph plus bullets is fine). Skip add_pokemon or update_set only when the user is asking a purely conceptual question with no Pokémon to try.",
     "When a Pokémon is selected, weight advice toward building around or supporting that mon.",
     "When the user asks to build, tighten, max stats, or apply a set for the selected Pokémon, include one update_set action with that species and the full ability, item, nature, moves, and evs.",
+    "Use update_set only for Pokémon already on the team. If the team is empty or the species is not on the team yet, use add_pokemon instead.",
+    "When the team is empty and the user names a Pokémon to build around, the first add_pokemon action must be that species with a full starter set.",
+    "Do not default to generic partners like Whimsicott unless the user asks for speed control or the current team clearly needs Tailwind.",
     "Do not ask the user to confirm in chat when update_set is available — the apply card is the confirmation step.",
-    "Keep visible replies to 1-2 short sentences when update_set is included; the card shows the full set.",
+    "Keep visible replies to 1-2 short sentences when update_set is included; the card shows the full set. add_pokemon teaching answers should keep the longer visible explanation.",
     "Do not claim exact damage calcs unless the app ran them — suggest what to verify in Pane Coach instead.",
     "When your answer includes a concrete change the app could apply, append one hidden action block at the very end.",
     "If you suggest adding a specific Pokémon, always include an add_pokemon action for that Pokémon with ability, item, nature, moves, and evs when you mention them.",
@@ -246,8 +255,9 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "Prefer one update_set action over separate apply_spread, set_moves, set_item, set_ability, and set_nature actions for the same Pokémon.",
     "When suggesting a partner, include a starter set in the add_pokemon action whenever possible: ability, item, nature, moves, and evs.",
     "Hidden update example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"update_set\",\"pokemon\":\"Basculegion\",\"ability\":\"Adaptability\",\"item\":\"Life Orb\",\"nature\":\"Jolly\",\"moves\":[\"Wave Crash\",\"Liquidation\",\"Crunch\",\"Protect\"],\"evs\":{\"HP\":36,\"Atk\":32,\"Spe\":32},\"reason\":\"Max Attack and Speed spread.\"}]}]]",
-    "Hidden multi-add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Whimsicott\",\"ability\":\"Prankster\",\"item\":\"Focus Sash\",\"nature\":\"Timid\",\"moves\":[\"Tailwind\",\"Encore\",\"Moonblast\",\"Protect\"],\"evs\":{\"HP\":32,\"Def\":32,\"SpD\":2},\"reason\":\"Tailwind setter.\"},{\"type\":\"add_pokemon\",\"pokemon\":\"Dragapult\",\"ability\":\"Clear Body\",\"item\":\"Life Orb\",\"nature\":\"Hasty\",\"moves\":[\"Phantom Force\",\"Draco Meteor\",\"Protect\",\"Tailwind\"],\"evs\":{\"Atk\":32,\"SpA\":32,\"Spe\":2},\"reason\":\"Fast attacker that can reuse Tailwind.\"}]}]]",
+    "Hidden multi-add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Armarouge\",\"ability\":\"Flash Fire\",\"item\":\"Assault Vest\",\"nature\":\"Modest\",\"moves\":[\"Armor Cannon\",\"Expanding Force\",\"Heat Wave\",\"Protect\"],\"evs\":{\"HP\":32,\"SpA\":32,\"SpD\":2},\"reason\":\"Trick Room attacker with bulk.\"},{\"type\":\"add_pokemon\",\"pokemon\":\"Torkoal\",\"ability\":\"Drought\",\"item\":\"Charcoal\",\"nature\":\"Quiet\",\"moves\":[\"Eruption\",\"Heat Wave\",\"Protect\",\"Solar Beam\"],\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Sun plus Trick Room support.\"}]}]]",
     "Hidden add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Torkoal\",\"ability\":\"Drought\",\"item\":\"Charcoal\",\"nature\":\"Quiet\",\"moves\":[\"Eruption\",\"Heat Wave\",\"Protect\",\"Solar Beam\"],\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Sun plus Trick Room support.\"}]}]]",
+    "Hidden beginner example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Incineroar\",\"ability\":\"Intimidate\",\"item\":\"Sitrus Berry\",\"nature\":\"Careful\",\"moves\":[\"Fake Out\",\"Flare Blitz\",\"Parting Shot\",\"Protect\"],\"evs\":{\"HP\":32,\"Def\":32,\"SpD\":2},\"reason\":\"Classic support — Intimidate weakens physical hits and Fake Out buys your partner a free turn.\"}]}]]",
     "Hidden spread example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"apply_spread\",\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Keeps offense while adding bulk.\"}]}]]",
     "Hidden moves example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"set_moves\",\"moves\":[\"Protect\",\"Armor Cannon\",\"Expanding Force\",\"Trick Room\"]}]}]]",
     "Only include actions you would be comfortable asking the user to approve. Keep visible prose natural and do not mention the hidden block.",
@@ -270,6 +280,14 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
 }
 
 export function parseBuildAssistReply(rawReply: string): BuildAssistResponse {
+  return finalizeBuildAssistStream(rawReply, false);
+}
+
+export function parseBuildAssistStream(rawReply: string): BuildAssistResponse {
+  return finalizeBuildAssistStream(rawReply, true);
+}
+
+function finalizeBuildAssistStream(rawReply: string, includePartialActions: boolean): BuildAssistResponse {
   const actions: BuildAssistAction[] = [];
   let reply = rawReply;
   const marker = "[[PANE_ACTIONS:";
@@ -279,22 +297,14 @@ export function parseBuildAssistReply(rawReply: string): BuildAssistResponse {
     const payloadStart = start + marker.length;
     const end = reply.indexOf("]]", payloadStart);
     if (end < 0) {
+      if (includePartialActions) {
+        actions.push(...parsePaneActionPayload(reply.slice(payloadStart), true));
+      }
       reply = reply.slice(0, start);
       break;
     }
 
-    const rawJson = reply.slice(payloadStart, end);
-    try {
-      const parsed = JSON.parse(rawJson) as { actions?: unknown };
-      if (Array.isArray(parsed.actions)) {
-        for (const action of parsed.actions) {
-          const normalized = normalizeBuildAssistAction(action);
-          if (normalized) actions.push(normalized);
-        }
-      }
-    } catch {
-      // Ignore malformed action payloads and keep the visible answer usable.
-    }
+    actions.push(...parsePaneActionPayload(reply.slice(payloadStart, end), false));
     reply = `${reply.slice(0, start)}${reply.slice(end + 2)}`;
   }
 
@@ -304,10 +314,139 @@ export function parseBuildAssistReply(rawReply: string): BuildAssistResponse {
     reply = loose.reply;
   }
 
-  // Final guard: never show a malformed action block to the user.
   reply = reply.replace(/\s*\[\[PANE_ACTIONS:[\s\S]*$/g, "").trim();
+  reply = stripTrailingPartialJson(reply);
 
   return { reply, actions };
+}
+
+function parsePaneActionPayload(payload: string, partial: boolean): BuildAssistAction[] {
+  const actions: BuildAssistAction[] = [];
+  if (!payload.trim()) return actions;
+
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(payload);
+  } catch {
+    if (partial) parsed = repairPartialJson(payload);
+  }
+
+  if (parsed && typeof parsed === "object" && Array.isArray((parsed as { actions?: unknown }).actions)) {
+    for (const action of (parsed as { actions: unknown[] }).actions) {
+      const normalized = normalizeBuildAssistAction(action);
+      if (normalized) actions.push(normalized);
+    }
+    if (actions.length || !partial) return actions;
+  }
+
+  if (partial) {
+    const inferred = inferPartialSetActions(payload);
+    if (inferred.length) return inferred;
+  }
+
+  return actions;
+}
+
+function repairPartialJson(payload: string): unknown | null {
+  let attempt = payload.trim();
+  if (!attempt) return null;
+
+  let inString = false;
+  let escaped = false;
+  const closers: string[] = [];
+
+  for (const char of attempt) {
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === "\"") inString = false;
+      continue;
+    }
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+    if (char === "{") closers.push("}");
+    else if (char === "[") closers.push("]");
+    else if (char === "}" || char === "]") {
+      if (closers.length && closers[closers.length - 1] === char) closers.pop();
+    }
+  }
+
+  if (inString) attempt += "\"";
+  attempt = attempt.replace(/,\s*("(?:[^"\\]|\\.)*)?$/, "");
+  attempt = attempt.replace(/,\s*$/, "");
+  attempt += closers.reverse().join("");
+
+  try {
+    return JSON.parse(attempt);
+  } catch {
+    return null;
+  }
+}
+
+function inferPartialSetActions(payload: string): BuildAssistAction[] {
+  const actions: BuildAssistAction[] = [];
+  const actionChunks = payload.split(/(?=\{"type"\s*:\s*"(?:add_pokemon|update_set)")/g);
+
+  for (const chunk of actionChunks) {
+    const typeMatch = chunk.match(/"type"\s*:\s*"(add_pokemon|update_set)"/);
+    if (!typeMatch) continue;
+
+    const type = typeMatch[1] as "add_pokemon" | "update_set";
+    const pokemonMatch = chunk.match(/"pokemon"\s*:\s*"([^"]+)"/);
+    if (!pokemonMatch?.[1]) continue;
+
+    const readField = (field: string) => {
+      const match = chunk.match(new RegExp(`"${field}"\\s*:\\s*"([^"]*)"`));
+      return match?.[1] || undefined;
+    };
+
+    const movesMatch = chunk.match(/"moves"\s*:\s*\[([\s\S]*?)(?:\]|$)/);
+    const moves = movesMatch
+      ? [...movesMatch[1].matchAll(/"([^"]*)"/g)].map((match) => match[1]).filter(Boolean)
+      : undefined;
+
+    const evs: Partial<Record<StatKey, number>> = {};
+    const evsMatch = chunk.match(/"evs"\s*:\s*\{([^}]*)(?:\}|$)/);
+    if (evsMatch) {
+      for (const match of evsMatch[1].matchAll(/"(HP|Atk|Def|SpA|SpD|Spe)"\s*:\s*(\d+)/g)) {
+        evs[match[1] as StatKey] = Number(match[2]);
+      }
+    }
+
+    actions.push(readSetAction(type, pokemonMatch[1], {
+      item: readField("item"),
+      ability: readField("ability"),
+      nature: readField("nature"),
+      moves,
+      evs: Object.keys(evs).length ? evs : undefined,
+      reason: readField("reason"),
+    }, readField("reason")));
+  }
+
+  return actions;
+}
+
+function stripTrailingPartialJson(reply: string) {
+  const trimmed = reply.trimEnd();
+  const lastBrace = trimmed.lastIndexOf("{");
+  if (lastBrace < 0) return trimmed;
+
+  const tail = trimmed.slice(lastBrace);
+  if (!/"actions"\s*:/.test(tail) && !/"type"\s*:\s*"(?:add_pokemon|update_set|apply_spread|set_)/.test(tail)) {
+    return trimmed;
+  }
+
+  if (findJsonObjectEnd(trimmed, lastBrace) >= 0) return trimmed;
+  return trimmed.slice(0, lastBrace).trimEnd();
+}
+
+export function shouldHideAssistProse(reply: string, actions: BuildAssistAction[]) {
+  if (!reply.trim()) return true;
+  if (actions.some((action) => action.type === "add_pokemon")) return false;
+  const hasUpdateSet = actions.some((action) => action.type === "update_set");
+  return hasUpdateSet && reply.length < 100 && hasSetSuggestionContent(reply);
 }
 
 function extractLooseActionObjects(rawReply: string): { reply: string; actions: BuildAssistAction[] } {
@@ -851,6 +990,18 @@ export function mergeBuildAssistActions(
     coveredAdds.add(inferred.pokemon.toLowerCase());
   }
 
+  for (const [species, action] of [...updateBySpecies.entries()]) {
+    if (teamSpecies.has(species)) continue;
+    if (coveredAdds.has(species)) {
+      updateBySpecies.delete(species);
+      continue;
+    }
+    const { type: _type, ...fields } = action;
+    adds.push({ type: "add_pokemon", ...fields });
+    updateBySpecies.delete(species);
+    coveredAdds.add(species);
+  }
+
   return [...others, ...updateBySpecies.values(), ...adds];
 }
 
@@ -865,6 +1016,36 @@ export function normalizeActionSpread(rawEvs: Partial<Record<StatKey, number>>) 
   return total <= CHAMPIONS_STAT_POINT_TOTAL ? evs : null;
 }
 
+const SPREAD_TRIM_PRIORITY: StatKey[] = ["HP", "Def", "SpD", "SpA", "Atk", "Spe"];
+
+export function sanitizeActionSpread(rawEvs: Partial<Record<StatKey, number>>) {
+  const evs = { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 } satisfies Record<StatKey, number>;
+  for (const stat of STAT_KEYS) {
+    const value = rawEvs[stat] ?? 0;
+    if (!Number.isFinite(value) || value < 0) return null;
+    evs[stat] = Math.min(CHAMPIONS_STAT_POINT_MAX, Math.round(value));
+  }
+
+  let total = Object.values(evs).reduce((sum, value) => sum + value, 0);
+  while (total > CHAMPIONS_STAT_POINT_TOTAL) {
+    const trimStat = SPREAD_TRIM_PRIORITY.find((stat) => evs[stat] > 0);
+    if (!trimStat) return null;
+    evs[trimStat] -= 1;
+    total -= 1;
+  }
+
+  return evs;
+}
+
+export function spreadWasAdjusted(rawEvs: Partial<Record<StatKey, number>> | undefined) {
+  if (!rawEvs) return false;
+  const normalized = normalizeActionSpread(rawEvs);
+  if (normalized) return false;
+  const sanitized = sanitizeActionSpread(rawEvs);
+  if (!sanitized) return false;
+  return STAT_KEYS.some((stat) => (rawEvs[stat] ?? 0) !== sanitized[stat]);
+}
+
 export function resolveSetChanges(
   action: BuildAssistSetSuggestion,
   pokemon: typeof POKEMON[number],
@@ -875,7 +1056,7 @@ export function resolveSetChanges(
   const ability = action.ability && pokemon.abilities.includes(action.ability) ? action.ability : undefined;
   const item = action.item && pokemon.items.includes(action.item) ? action.item : undefined;
   const nature = action.nature && ALL_NATURES.includes(action.nature) ? action.nature : undefined;
-  const evs = action.evs ? normalizeActionSpread(action.evs) ?? undefined : undefined;
+  const evs = action.evs ? sanitizeActionSpread(action.evs) ?? normalizeActionSpread(action.evs) ?? undefined : undefined;
 
   return {
     item,
@@ -971,9 +1152,11 @@ export async function streamBuildAssistMessage(
   return parseBuildAssistReply(reply.trim());
 }
 
+export const BUILD_ASSIST_VGC_STARTER = "Teach me about VGC — where do I start?";
+
 export const BUILD_ASSIST_STARTERS = [
   "What should I add next?",
   "What is this team missing?",
-  "Suggest one partner.",
+  BUILD_ASSIST_VGC_STARTER,
   "Tighten this set.",
 ] as const;

@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { answerCoachQuestion, applyCoachRecommendation, baseCoachQuestion, CoachAnswer, CoachRecommendation, moveIsSpread } from "../lib/coach";
 import { BuildAssistBubble } from "./components/BuildAssistBubble";
+import { PokeballMark } from "./components/PokeballMark";
 import {
   CHAMPIONS_STAT_POINT_MAX,
   CHAMPIONS_STAT_POINT_TOTAL,
@@ -256,7 +257,12 @@ export default function Home() {
 
   const selected = team.find((pokemon) => pokemon.id === selectedId) ?? null;
   const selectedData = POKEMON.find((pokemon) => pokemon.name === selected?.species) ?? null;
+  const showCoachBar = Boolean(selected && selectedData);
   const issues = useMemo(() => validateTeam(team), [team]);
+
+  useEffect(() => {
+    if (!showCoachBar && coachOpen) setCoachOpen(false);
+  }, [showCoachBar, coachOpen]);
 
   const addPokemon = (pokemon: PokemonData) => {
     const build = createBuild(pokemon);
@@ -364,10 +370,10 @@ export default function Home() {
   const activeSavedTeam = savedTeams.find((savedTeam) => savedTeam.id === activeSavedTeamId);
 
   return (
-    <main className={`app-shell ${coachOpen ? "coach-open" : ""}`}>
+    <main className={`app-shell${showCoachBar ? " has-coach-strip" : ""}${coachOpen ? " coach-open" : ""}`}>
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark"><span /></div>
+          <img className="brand-mark" src="/pokepane-logo.png?v=3" alt="" aria-hidden="true" />
           <div>
             <strong>POKE PANE</strong>
           </div>
@@ -421,7 +427,7 @@ export default function Home() {
 
             {Array.from({ length: 6 - team.length }).map((_, index) => (
               <button className="empty-slot" key={index} onClick={() => setPickerOpen(true)}>
-                <Plus size={20} />
+                <PokeballMark size={18} />
                 <span>Add Pokémon</span>
               </button>
             ))}
@@ -451,13 +457,15 @@ export default function Home() {
         </section>
       </div>
 
-      <CoachDrawer
-        open={coachOpen}
-        setOpen={setCoachOpen}
-        team={team}
-        selectedId={selectedId}
-        applySpread={applyCoachSpread}
-      />
+      {showCoachBar ? (
+        <CoachDrawer
+          open={coachOpen}
+          setOpen={setCoachOpen}
+          team={team}
+          selectedId={selectedId}
+          applySpread={applyCoachSpread}
+        />
+      ) : null}
 
       {pickerOpen && (
         <PokemonPicker
@@ -514,7 +522,7 @@ function EmptyEditor({ team, onStart, addPokemonByName, removePokemonById }: {
     <div className="empty-editor">
       <div className="orbit one" />
       <div className="orbit two" />
-      <div className="anchor-orb"><Sparkles size={34} /></div>
+      <div className="anchor-orb"><PokeballMark size={34} /></div>
       <h1>Add Pokémon</h1>
       <div className="empty-editor-actions">
         <button className="primary-button large" onClick={onStart}><Plus size={18} /> Add Pokémon</button>

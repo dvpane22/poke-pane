@@ -4,13 +4,18 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Sparkles, X } from "lucide-react";
 import {
   BUILD_ASSIST_STARTERS,
+  BUILD_ASSIST_VGC_STARTER,
   type BuildAssistAction,
   buildAssistContext,
   formatActionSpread,
   mergeBuildAssistActions,
   normalizeActionSpread,
+  parseBuildAssistStream,
   resolveAddPokemonChanges,
   resolveSetChanges,
+  sanitizeActionSpread,
+  shouldHideAssistProse,
+  spreadWasAdjusted,
   streamBuildAssistMessage,
   type BuildAssistMessage,
 } from "../../lib/build-assist";
@@ -31,10 +36,12 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<BuildAssistMessage[]>([]);
   const [actions, setActions] = useState<BuildAssistPendingAction[]>([]);
+  const [streamingActions, setStreamingActions] = useState<BuildAssistPendingAction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const streamReplyRef = useRef("");
 
   const context = useMemo(() => buildAssistContext(team, selectedId), [selectedId, team]);
   const selectedName = context.pokemon.find((mon) => mon.selected)?.displayName ?? null;
@@ -48,7 +55,14 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
     const node = scrollRef.current;
     if (!node) return;
     node.scrollTop = node.scrollHeight;
-  }, [messages, loading, open]);
+  }, [messages, loading, open, streamingActions, actions]);
+
+  const updateStreamingState = (rawReply: string) => {
+    const streamed = parseBuildAssistStream(rawReply);
+    const visibleActions = mergeBuildAssistActions(streamed.actions ?? [], streamed.reply, team, selectedId);
+    setStreamingActions(visibleActions.map((action, index) => ({ id: `stream-${index}`, action })));
+    return streamed;
+  };
 
   const submitMessage = async (rawMessage: string) => {
     const content = rawMessage.trim();
@@ -60,23 +74,33 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
     setDraft("");
     setError(null);
     setActions([]);
+    setStreamingActions([]);
+    streamReplyRef.current = "";
     setLoading(true);
 
     try {
       const { reply, actions: proposedActions = [] } = await streamBuildAssistMessage(nextMessages, context, (delta) => {
+        streamReplyRef.current += delta;
+        const streamed = updateStreamingState(streamReplyRef.current);
+        const visibleReply = shouldHideAssistProse(streamed.reply, streamed.actions ?? [])
+          ? ""
+          : streamed.reply;
         setMessages((current) => current.map((message, index) => (
           index === assistantIndex
-            ? { ...message, content: message.content + delta }
+            ? { ...message, content: visibleReply }
             : message
         )));
       });
-      setMessages((current) => current.map((message, index) => (
-        index === assistantIndex ? { ...message, content: reply } : message
-      )));
       const visibleActions = mergeBuildAssistActions(proposedActions, reply, team, selectedId);
+      const visibleReply = shouldHideAssistProse(reply, visibleActions) ? "" : reply;
+      setMessages((current) => current.map((message, index) => (
+        index === assistantIndex ? { ...message, content: visibleReply } : message
+      )));
       setActions(visibleActions.map((action, index) => ({ id: `${Date.now()}-${index}`, action })));
+      setStreamingActions([]);
     } catch (submitError) {
       setMessages((current) => current.filter((_, index) => index !== assistantIndex));
+      setStreamingActions([]);
       setError(submitError instanceof Error ? submitError.message : "Build assist failed.");
     } finally {
       setLoading(false);
@@ -105,8 +129,19 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
     }
     if (action.type === "update_set") {
       const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
-      if (pokemon && selectedBuild?.species.toLowerCase() === action.pokemon.toLowerCase()) {
+      if (!pokemon) return;
+      const onTeam = team.some((entry) => entry.species.toLowerCase() === action.pokemon.toLowerCase());
+      if (onTeam && selectedBuild?.species.toLowerCase() === action.pokemon.toLowerCase()) {
         onUpdateSelected?.(resolveSetChanges(action, pokemon));
+      } else if (!onTeam) {
+        const addedId = onAddPokemon?.(pokemon.name, resolveSetChanges(action, pokemon)) ?? null;
+        if (addedId) {
+          setActions((current) => current.map((entry) => (
+            entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
+          )));
+        }
+        setActions((current) => current.filter((entry) => entry.id !== pending.id));
+        return;
       }
       setActions((current) => current.filter((entry) => entry.id !== pending.id));
       return;
@@ -119,7 +154,7 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
       if (legalMoves.length) onUpdateSelected?.({ moves: [...legalMoves, "", "", "", ""].slice(0, 4) });
     }
     if (action.type === "apply_spread" && selectedBuild) {
-      const evs = normalizeActionSpread(action.evs);
+      const evs = sanitizeActionSpread(action.evs) ?? normalizeActionSpread(action.evs);
       if (evs) onUpdateSelected?.({ evs });
     }
 
@@ -155,6 +190,10 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
 
   const pendingAddCount = actions.filter((entry) => entry.action.type === "add_pokemon" && !entry.appliedPokemonId).length;
   const canApplyAllAdds = pendingAddCount > 1 && team.length < 6;
+  const visibleActions = loading ? streamingActions : actions;
+  const starterPrompts = team.length
+    ? BUILD_ASSIST_STARTERS
+    : ["Build a team around a Pokémon", BUILD_ASSIST_VGC_STARTER, "What should my first pick be?"];
 
   return (
     <div className={`build-assist-root ${isPanelMode ? "panel-mode" : "launcher-mode"}${open ? " open" : ""}`} aria-live="polite">
@@ -189,7 +228,7 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
               <div className="build-assist-empty">
                 <p>Quick suggestions from the current roster.</p>
                 <div className="build-assist-starters">
-                  {BUILD_ASSIST_STARTERS.map((prompt) => (
+                  {starterPrompts.map((prompt) => (
                     <button key={prompt} type="button" onClick={() => void submitMessage(prompt)} disabled={loading}>
                       {prompt}
                     </button>
@@ -198,21 +237,33 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
               </div>
             ) : (
               <>
-                {messages.map((message, index) => (
-                  <article
-                    key={`${message.role}-${index}`}
-                    className={`build-assist-message ${message.role}`}
-                  >
-                    <span>{message.role === "user" ? "You" : "Assist"}</span>
-                    <p>{message.content || "Thinking…"}</p>
-                  </article>
-                ))}
-                {actions.map((pending) => (
+                {messages.map((message, index) => {
+                  const isStreamingAssistant = loading
+                    && index === messages.length - 1
+                    && message.role === "assistant";
+
+                  const content = message.content
+                    || (isStreamingAssistant ? "Thinking…" : "");
+
+                  if (message.role === "assistant" && !content) return null;
+
+                  return (
+                    <article
+                      key={`${message.role}-${index}`}
+                      className={`build-assist-message ${message.role}`}
+                    >
+                      <span>{message.role === "user" ? "You" : "Assist"}</span>
+                      {content ? <p>{content}</p> : null}
+                    </article>
+                  );
+                })}
+                {visibleActions.map((pending) => (
                   <BuildAssistActionCard
                     key={pending.id}
                     pending={pending}
                     team={team}
                     selectedId={selectedId}
+                    streaming={loading && pending.id.startsWith("stream-")}
                     onApply={() => applyAction(pending)}
                     onRemove={pending.appliedPokemonId ? () => {
                       onRemovePokemon?.(pending.appliedPokemonId!);
@@ -265,10 +316,11 @@ type BuildAssistPendingAction = {
   appliedPokemonId?: string;
 };
 
-function BuildAssistActionCard({ pending, team, selectedId, onApply, onRemove, onDismiss }: {
+function BuildAssistActionCard({ pending, team, selectedId, streaming = false, onApply, onRemove, onDismiss }: {
   pending: BuildAssistPendingAction;
   team: PokemonBuild[];
   selectedId: string | null;
+  streaming?: boolean;
   onApply: () => void;
   onRemove?: () => void;
   onDismiss: () => void;
@@ -285,14 +337,14 @@ function BuildAssistActionCard({ pending, team, selectedId, onApply, onRemove, o
   const isSetCard = Boolean(setCardAction);
 
   return (
-    <article className={`build-assist-action-card${isApplied ? " applied" : ""}`}>
+    <article className={`build-assist-action-card${isApplied ? " applied" : ""}${streaming ? " streaming" : ""}`}>
       <div className={`build-assist-action-layout${isSetCard ? " add-pokemon" : ""}`}>
         {isSetCard && setCardAction ? (
           <>
             <div className="build-assist-action-art">
               {pokemon ? <img src={pokemon.sprite} alt="" /> : <Sparkles size={24} />}
               <div className="build-assist-action-title">
-                <small>{isApplied ? "Applied to team" : "Suggested change"}</small>
+                <small>{isApplied ? "Applied to team" : streaming ? "Building set…" : "Suggested change"}</small>
                 <strong>{actionLabel(action)}</strong>
               </div>
             </div>
@@ -330,12 +382,16 @@ function BuildAssistActionCard({ pending, team, selectedId, onApply, onRemove, o
         </ul>
       ) : null}
       <div className="build-assist-action-buttons">
-        <button type="button" onClick={onDismiss}>Dismiss</button>
-        {isApplied ? (
-          <button className="danger-action" type="button" onClick={onRemove}>Remove</button>
-        ) : (
-          <button type="button" onClick={onApply} disabled={Boolean(disabledReason)}>Apply</button>
-        )}
+        {!streaming ? (
+          <>
+            <button type="button" onClick={onDismiss}>Dismiss</button>
+            {isApplied ? (
+              <button className="danger-action" type="button" onClick={onRemove}>Remove</button>
+            ) : (
+              <button type="button" onClick={onApply} disabled={Boolean(disabledReason)}>Apply</button>
+            )}
+          </>
+        ) : null}
       </div>
     </article>
   );
@@ -344,8 +400,12 @@ function BuildAssistActionCard({ pending, team, selectedId, onApply, onRemove, o
 function SetPreview({ action }: {
   action: Extract<BuildAssistAction, { type: "add_pokemon" | "update_set" }>;
 }) {
+  const rawEvs = action.evs ?? {};
+  const evs: Record<StatKey, number> = sanitizeActionSpread(rawEvs)
+    ?? normalizeActionSpread(rawEvs)
+    ?? { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 };
   const moves = action.moves?.filter(Boolean).slice(0, 4) ?? [];
-  const evs = action.evs ?? {};
+  const adjustedSpread = spreadWasAdjusted(action.evs);
 
   return (
     <div className="build-assist-set-preview">
@@ -368,6 +428,7 @@ function SetPreview({ action }: {
           </span>
         ))}
       </div>
+      {adjustedSpread ? <p className="build-assist-action-note">Spread adjusted to fit 32 per stat and 66 total.</p> : null}
     </div>
   );
 }
@@ -394,20 +455,28 @@ function actionDisabledReason(
     if (team.length >= 6) return "Team is already full.";
     const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
     if (!pokemon) return "That Pokémon is not in this catalog.";
-    if (action.evs && !normalizeActionSpread(action.evs)) return "Spread must stay within 32 per stat and 66 total.";
+    if (action.evs && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
     return "";
   }
   if (action.type === "update_set") {
+    const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
+    if (!pokemon) return "That Pokémon is not in this catalog.";
+    const onTeam = team.some((entry) => entry.species.toLowerCase() === action.pokemon.toLowerCase());
+    if (!onTeam) {
+      if (team.length >= 6) return "Team is already full.";
+      if (action.evs && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
+      return "";
+    }
     if (!hasSelected) return "Select a Pokémon first.";
     if (!selectedData || selectedData.name.toLowerCase() !== action.pokemon.toLowerCase()) {
       return `Select ${action.pokemon} first.`;
     }
-    if (action.evs && !normalizeActionSpread(action.evs)) return "Spread must stay within 32 per stat and 66 total.";
+    if (action.evs && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
     return "";
   }
   if (!hasSelected) return "Select a Pokémon first.";
   if (action.type === "set_ability" && selectedData && !selectedData.abilities.includes(action.ability)) return "Ability is not legal for the selected Pokémon.";
   if (action.type === "set_moves" && selectedData && !action.moves.some((move) => selectedData.moves.includes(move))) return "No suggested moves are legal for the selected Pokémon.";
-  if (action.type === "apply_spread" && !normalizeActionSpread(action.evs)) return "Spread must stay within 32 per stat and 66 total.";
+  if (action.type === "apply_spread" && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
   return "";
 }
