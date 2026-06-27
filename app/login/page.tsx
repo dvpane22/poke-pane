@@ -2,6 +2,7 @@
 
 import { FormEvent, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { clearBuildAssistStorage, writeDraftTeamSessionId } from "../../lib/build-assist-session";
 
 function LoginForm() {
   const router = useRouter();
@@ -26,6 +27,9 @@ function LoginForm() {
         setError(typeof payload.error === "string" ? payload.error : "Wrong password.");
         return;
       }
+
+      clearBuildAssistStorage();
+      writeDraftTeamSessionId(null);
 
       const from = searchParams.get("from") || "/";
       router.replace(from);

@@ -1,4 +1,4 @@
-import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, formatMegaDisplayName, POKEMON, PokemonBuild, PokemonData, StatKey } from "./pokemon";
+import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, formatMegaDisplayName, MegaForm, POKEMON, PokemonBuild, PokemonData, StatKey } from "./pokemon";
 
 export type BuildAssistChatRole = "user" | "assistant";
 
@@ -25,7 +25,107 @@ export type BuildAssistContext = {
   maxTeamSize: number;
   selectedDisplayName: string | null;
   pokemon: BuildAssistPokemonSnapshot[];
+  excludedSpecies: string[];
+  teamComposition: string;
+  hasWeatherSetter: boolean;
 };
+
+export type BuildAssistContextOptions = {
+  priorSuggestedSpecies?: string[];
+};
+
+const WEATHER_SETTER_ABILITIES = new Set(["Drizzle", "Drought", "Snow Warning", "Sand Stream"]);
+const TRICK_ROOM_MOVES = new Set(["Trick Room"]);
+const SPEED_CONTROL_MOVES = new Set(["Tailwind", "Icy Wind", "Electroweb", "Bleakwind Storm"]);
+
+export function teamHasWeatherSetter(team: PokemonBuild[]) {
+  return team.some((build) => {
+    const data = POKEMON.find((entry) => entry.name === build.species);
+    const ability = build.ability && build.ability !== "None" ? build.ability : data?.abilities[0] ?? "";
+    return WEATHER_SETTER_ABILITIES.has(ability);
+  });
+}
+
+export function actionAddsWeatherSetter(action: BuildAssistAction) {
+  if (action.type !== "add_pokemon" && action.type !== "update_set") return false;
+  return Boolean(action.ability && WEATHER_SETTER_ABILITIES.has(action.ability));
+}
+
+function summarizeTeamComposition(pokemon: BuildAssistPokemonSnapshot[]) {
+  if (!pokemon.length) {
+    return "Team is empty — pick one core direction first (rain, sun, Trick Room, or balanced offense).";
+  }
+
+  const lines: string[] = [];
+  const weather = pokemon.filter((mon) => WEATHER_SETTER_ABILITIES.has(mon.ability));
+  if (weather.length) {
+    lines.push(`Weather core: ${weather.map((mon) => `${mon.displayName} (${mon.ability})`).join(", ")}`);
+  }
+
+  const intimidators = pokemon.filter((mon) => mon.ability === "Intimidate");
+  if (intimidators.length) {
+    lines.push(`Intimidate: ${intimidators.map((mon) => mon.displayName).join(", ")}`);
+  }
+
+  const trickRoom = pokemon.filter((mon) => mon.moves.some((move) => TRICK_ROOM_MOVES.has(move)));
+  if (trickRoom.length) {
+    lines.push(`Trick Room access: ${trickRoom.map((mon) => mon.displayName).join(", ")}`);
+  }
+
+  const speedControl = pokemon.filter((mon) => mon.moves.some((move) => SPEED_CONTROL_MOVES.has(move)));
+  if (speedControl.length) {
+    lines.push(`Speed control: ${speedControl.map((mon) => mon.displayName).join(", ")}`);
+  }
+
+  const types = new Set(pokemon.flatMap((mon) => mon.types));
+  lines.push(`Team types present: ${[...types].join(", ") || "unknown"}`);
+
+  if (weather.length) {
+    lines.push("Rain/sun/sand/snow is already covered — add partners that benefit from that weather, not another setter.");
+  } else {
+    lines.push("No dedicated weather setter yet — only add one if the user is building a weather team.");
+  }
+
+  return lines.join("\n");
+}
+
+export function buildAssistContext(
+  team: PokemonBuild[],
+  selectedId: string | null,
+  options: BuildAssistContextOptions = {},
+): BuildAssistContext {
+  const pokemon = team.map((build) => {
+    const data = POKEMON.find((entry) => entry.name === build.species);
+    const megaForm = data?.megaForms?.find((form) => form.name === build.megaForm);
+    const displayName = megaForm ? formatMegaFormName(build.species, megaForm.name) : build.species;
+    return {
+      species: build.species,
+      displayName,
+      types: megaForm?.types ?? data?.types ?? [],
+      item: build.item || "None",
+      ability: build.ability || "None",
+      nature: build.nature || "Hardy",
+      moves: build.moves.filter(Boolean),
+      evs: build.evs,
+      selected: build.id === selectedId,
+    };
+  });
+
+  const excluded = new Set<string>();
+  for (const build of team) excluded.add(build.species.toLowerCase());
+  for (const species of options.priorSuggestedSpecies ?? []) excluded.add(species.toLowerCase());
+
+  return {
+    format: "Pokémon Champions · Regulation MB · Level 50 · 32 Stat Points max per stat · 66 total per Pokémon · Doubles",
+    teamSize: team.length,
+    maxTeamSize: 6,
+    selectedDisplayName: pokemon.find((entry) => entry.selected)?.displayName ?? null,
+    pokemon,
+    excludedSpecies: [...excluded],
+    teamComposition: summarizeTeamComposition(pokemon),
+    hasWeatherSetter: teamHasWeatherSetter(team),
+  };
+}
 
 export type BuildAssistRequest = {
   messages: BuildAssistMessage[];
@@ -40,6 +140,7 @@ export type BuildAssistResponse = {
 export type BuildAssistSetSuggestion = {
   pokemon: string;
   reason?: string;
+  megaForm?: string;
   item?: string;
   ability?: string;
   nature?: string;
@@ -58,33 +159,6 @@ export type BuildAssistAction =
 
 function formatMegaFormName(species: string, formName: string) {
   return formatMegaDisplayName(species, formName);
-}
-
-export function buildAssistContext(team: PokemonBuild[], selectedId: string | null): BuildAssistContext {
-  const pokemon = team.map((build) => {
-    const data = POKEMON.find((entry) => entry.name === build.species);
-    const megaForm = data?.megaForms?.find((form) => form.name === build.megaForm);
-    const displayName = megaForm ? formatMegaFormName(build.species, megaForm.name) : build.species;
-    return {
-      species: build.species,
-      displayName,
-      types: megaForm?.types ?? data?.types ?? [],
-      item: build.item || "None",
-      ability: build.ability || "None",
-      nature: build.nature || "Hardy",
-      moves: build.moves.filter(Boolean),
-      evs: build.evs,
-      selected: build.id === selectedId,
-    };
-  });
-
-  return {
-    format: "Pokémon Champions · Regulation MB · Level 50 · 32 Stat Points max per stat · 66 total per Pokémon · Doubles",
-    teamSize: team.length,
-    maxTeamSize: 6,
-    selectedDisplayName: pokemon.find((entry) => entry.selected)?.displayName ?? null,
-    pokemon,
-  };
 }
 
 const CATALOG_DETAIL_LIMIT = 8;
@@ -115,11 +189,122 @@ function isMegaStoneItem(item: string) {
   return /(?:ite|inite)$/i.test(item) && item !== "Eviolite";
 }
 
-function filterBuilderItems(items: string[]) {
+function normalizeMegaText(text: string) {
+  return text.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function megaAliases(pokemon: PokemonData, formName: string) {
+  const marker = `${pokemon.name}-Mega`;
+  const suffix = formName.startsWith(marker) ? normalizeMegaText(formName.slice(marker.length)) : "";
+  const base = normalizeMegaText(pokemon.name);
+  return [
+    normalizeMegaText(formName),
+    `mega${base}${suffix}`,
+    `${base}mega${suffix}`,
+  ];
+}
+
+function resolveMegaFormFromText(text: string, pokemon: PokemonData): MegaForm | undefined {
+  const normalized = normalizeMegaText(text);
+  const forms = pokemon.megaForms ?? [];
+  if (!forms.length) return undefined;
+
+  const matching = forms.find((form) => megaAliases(pokemon, form.name).some((alias) => normalized.includes(alias)));
+  if (matching) return matching;
+
+  const genericMega = normalized.includes(`mega${normalizeMegaText(pokemon.name)}`)
+    || normalized.includes(`${normalizeMegaText(pokemon.name)}mega`);
+  if (genericMega && forms.length === 1) return forms[0];
+  return undefined;
+}
+
+function megaStoneForForm(pokemon: PokemonData, form: MegaForm): string | undefined {
+  const stones = pokemon.items.filter(isMegaStoneItem);
+  if (!stones.length) return undefined;
+
+  const formSuffix = form.name.startsWith(`${pokemon.name}-Mega`)
+    ? form.name.slice(`${pokemon.name}-Mega`.length).replace(/^-/, "")
+    : "";
+  const speciesKey = normalizeMegaText(pokemon.name);
+
+  const speciesStones = stones.filter((stone) => {
+    const stoneKey = normalizeMegaText(stone);
+    const stem = speciesKey.replace(/o$/, "").slice(0, Math.max(4, Math.min(speciesKey.length, 7)));
+    return stoneKey.includes(speciesKey.slice(0, 4)) || stoneKey.includes(stem);
+  });
+  if (!speciesStones.length) return undefined;
+
+  if (formSuffix) {
+    const suffixKey = normalizeMegaText(formSuffix);
+    return speciesStones.find((stone) => normalizeMegaText(stone).includes(suffixKey))
+      ?? speciesStones.find((stone) => stone.endsWith(formSuffix))
+      ?? speciesStones[0];
+  }
+
+  if (speciesStones.length > 1) {
+    return speciesStones.find((stone) => !/\sZ$/i.test(stone) && !stone.endsWith(" Z")) ?? speciesStones[0];
+  }
+  return speciesStones[0];
+}
+
+function findMegaFormByItem(pokemon: PokemonData, item: string): MegaForm | undefined {
+  if (!isMegaStoneItem(item)) return undefined;
+  return pokemon.megaForms?.find((form) => megaStoneForForm(pokemon, form) === item);
+}
+
+function legalAbilitiesForSet(pokemon: PokemonData, megaFormName?: string) {
+  const abilities = [...pokemon.abilities];
+  if (megaFormName) {
+    const form = pokemon.megaForms?.find((entry) => entry.name === megaFormName);
+    if (form?.ability && !abilities.includes(form.ability)) abilities.push(form.ability);
+  }
+  return abilities;
+}
+
+function applyMegaIntent(suggestion: BuildAssistSetSuggestion, conversationText: string): BuildAssistSetSuggestion {
+  const pokemon = findCatalogPokemon(suggestion.pokemon);
+  if (!pokemon?.megaForms?.length) return suggestion;
+
+  let form = suggestion.megaForm
+    ? pokemon.megaForms.find((entry) => entry.name === suggestion.megaForm)
+    : undefined;
+
+  if (!form && suggestion.item) {
+    form = findMegaFormByItem(pokemon, suggestion.item);
+  }
+
+  if (!form) {
+    form = resolveMegaFormFromText(`${conversationText}\n${suggestion.reason ?? ""}`, pokemon);
+  }
+
+  if (!form && suggestion.ability) {
+    form = pokemon.megaForms.find((entry) => entry.ability === suggestion.ability);
+  }
+
+  if (!form) return suggestion;
+
+  const stone = megaStoneForForm(pokemon, form);
+  const ability = suggestion.ability && legalAbilitiesForSet(pokemon).includes(suggestion.ability)
+    ? suggestion.ability
+    : pokemon.abilities[0];
+
+  return {
+    ...suggestion,
+    megaForm: form.name,
+    item: stone ?? suggestion.item,
+    ability,
+  };
+}
+
+function filterBuilderItems(items: string[], pokemon?: PokemonData) {
   const legal = items.filter((item) => !isMegaStoneItem(item));
   const prioritized = BUILDER_ITEM_PRIORITY.filter((item) => legal.includes(item));
   const rest = legal.filter((item) => !prioritized.includes(item)).sort((left, right) => left.localeCompare(right));
-  return [...prioritized, ...rest].slice(0, CATALOG_ITEM_LIMIT);
+  const base = [...prioritized, ...rest];
+  const megaStones = (pokemon?.megaForms ?? [])
+    .map((form) => megaStoneForForm(pokemon!, form))
+    .filter((stone): stone is string => Boolean(stone));
+  return [...new Set([...megaStones, ...base])].slice(0, CATALOG_ITEM_LIMIT + megaStones.length);
 }
 
 function selectBuilderMoves(moves: string[]) {
@@ -150,10 +335,11 @@ export function findPokemonNamesInText(text: string, excludeSpecies: Set<string>
 }
 
 export function selectCatalogDetailNames(context: BuildAssistContext, messages: BuildAssistMessage[]) {
+  const detailLimit = isFullTeamRequest(messages, context) ? 12 : CATALOG_DETAIL_LIMIT;
   const ordered: string[] = [];
   const seen = new Set<string>();
   const add = (name: string) => {
-    if (seen.has(name) || ordered.length >= CATALOG_DETAIL_LIMIT) return;
+    if (seen.has(name) || ordered.length >= detailLimit) return;
     if (!POKEMON.some((pokemon) => pokemon.name === name)) return;
     seen.add(name);
     ordered.push(name);
@@ -169,30 +355,339 @@ export function selectCatalogDetailNames(context: BuildAssistContext, messages: 
   const conversationText = messages.slice(-8).map((message) => message.content).join("\n");
   for (const name of findPokemonNamesInText(conversationText)) add(name);
 
+  if (isFullTeamRequest(messages, context)) {
+    const latest = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
+    const theme = latest.includes("rain") ? "rain" : latest.includes("sun") ? "sun" : latest.includes("trick room") ? "trick room" : null;
+    if (theme) {
+      for (const name of catalogThemeCandidates(theme)) add(name);
+    }
+  }
+
   return ordered;
-}
-
-function formatPokemonCatalogEntry(data: PokemonData) {
-  const items = filterBuilderItems(data.items);
-  const moves = selectBuilderMoves(data.moves);
-  const legalItemCount = data.items.filter((item) => !isMegaStoneItem(item)).length;
-  const omittedItems = Math.max(0, legalItemCount - items.length);
-  const omittedMoves = Math.max(0, data.moves.length - moves.length);
-
-  return [
-    `${data.name} · ${data.types.join("/")} · ${data.role}`,
-    `Base stats: ${formatBaseStats(data.stats)}`,
-    `Abilities: ${data.abilities.join(", ")}`,
-    `Legal items: ${items.join(", ")}${omittedItems > 0 ? ` (+${omittedItems} more held items)` : ""}`,
-    `Legal moves: ${moves.join(", ")}${omittedMoves > 0 ? ` (+${omittedMoves} more moves)` : ""}`,
-  ].join("\n");
 }
 
 function formatRegulationMBCatalogIndex() {
   return POKEMON.map((pokemon) => pokemon.name).sort((left, right) => left.localeCompare(right)).join(", ");
 }
 
+function formatPokemonCatalogEntry(data: PokemonData) {
+  const items = filterBuilderItems(data.items, data);
+  const moves = selectBuilderMoves(data.moves);
+  const legalItemCount = data.items.filter((item) => !isMegaStoneItem(item)).length;
+  const omittedItems = Math.max(0, legalItemCount - items.length);
+  const omittedMoves = Math.max(0, data.moves.length - moves.length);
+  const megaLine = (data.megaForms ?? []).length
+    ? `Mega forms: ${data.megaForms!.map((form) => {
+      const stone = megaStoneForForm(data, form);
+      return `${formatMegaFormName(data.name, form.name)} (${form.ability}${stone ? `, ${stone}` : ""})`;
+    }).join("; ")}`
+    : null;
+
+  return [
+    `${data.name} · ${data.types.join("/")} · ${data.role}`,
+    `Base stats: ${formatBaseStats(data.stats)}`,
+    `Abilities: ${data.abilities.join(", ")}`,
+    megaLine,
+    `Legal items: ${items.join(", ")}${omittedItems > 0 ? ` (+${omittedItems} more held items)` : ""}`,
+    `Legal moves: ${moves.join(", ")}${omittedMoves > 0 ? ` (+${omittedMoves} more moves)` : ""}`,
+  ].filter(Boolean).join("\n");
+}
+
+function findCatalogPokemon(name: string) {
+  return POKEMON.find((entry) => entry.name.toLowerCase() === name.trim().toLowerCase());
+}
+
+export function isCatalogPokemon(name: string) {
+  return Boolean(findCatalogPokemon(name));
+}
+
+function isLegalCatalogSet(suggestion: BuildAssistSetSuggestion) {
+  const pokemon = findCatalogPokemon(suggestion.pokemon);
+  if (!pokemon) return false;
+
+  const inferredForm = suggestion.megaForm
+    ? pokemon.megaForms?.find((form) => form.name === suggestion.megaForm)
+    : suggestion.item ? findMegaFormByItem(pokemon, suggestion.item) : undefined;
+  const legalAbilities = legalAbilitiesForSet(pokemon, inferredForm?.name);
+
+  if (!suggestion.ability?.trim() || !legalAbilities.includes(suggestion.ability)) return false;
+  if (!suggestion.item?.trim() || !pokemon.items.includes(suggestion.item)) return false;
+  if (inferredForm) {
+    const expectedStone = megaStoneForForm(pokemon, inferredForm);
+    if (expectedStone && suggestion.item !== expectedStone) return false;
+  }
+  if (!suggestion.nature?.trim()) return false;
+  const moves = suggestion.moves?.filter(Boolean) ?? [];
+  if (moves.length < 4 || !moves.every((move) => pokemon.moves.includes(move))) return false;
+  return Boolean(sanitizeActionSpread(suggestion.evs ?? {}));
+}
+
+function catalogThemeCandidates(theme: "rain" | "sun" | "trick room") {
+  if (theme === "rain") {
+    return POKEMON.filter((pokemon) =>
+      pokemon.abilities.includes("Drizzle")
+      || pokemon.abilities.includes("Swift Swim")
+      || pokemon.moves.includes("Hurricane")
+      || pokemon.moves.includes("Thunder"),
+    ).map((pokemon) => pokemon.name);
+  }
+  if (theme === "sun") {
+    return POKEMON.filter((pokemon) =>
+      pokemon.abilities.includes("Drought")
+      || pokemon.abilities.includes("Chlorophyll")
+      || pokemon.moves.includes("Solar Beam"),
+    ).map((pokemon) => pokemon.name);
+  }
+  return POKEMON.filter((pokemon) => pokemon.moves.includes("Trick Room")).map((pokemon) => pokemon.name);
+}
+
+function buildThemeCatalogHint(messages: BuildAssistMessage[], context: BuildAssistContext) {
+  if (!isFullTeamRequest(messages, context)) return "";
+  const latest = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
+  if (latest.includes("rain")) {
+    const drizzle = POKEMON.filter((pokemon) => pokemon.abilities.includes("Drizzle")).map((pokemon) => pokemon.name);
+    const swiftSwim = POKEMON.filter((pokemon) => pokemon.abilities.includes("Swift Swim")).map((pokemon) => pokemon.name);
+    const intimidate = POKEMON.filter((pokemon) => pokemon.abilities.includes("Intimidate")).map((pokemon) => pokemon.name);
+    return [
+      "Legal rain-team candidates from this Regulation MB catalog (choose and build sets yourself — do not copy template teams):",
+      `Drizzle: ${drizzle.join(", ") || "none"}`,
+      `Swift Swim: ${swiftSwim.join(", ") || "none"}`,
+      `Intimidate: ${intimidate.join(", ") || "none"}`,
+    ].join("\n");
+  }
+  if (latest.includes("sun")) {
+    const drought = POKEMON.filter((pokemon) => pokemon.abilities.includes("Drought")).map((pokemon) => pokemon.name);
+    const chlorophyll = POKEMON.filter((pokemon) => pokemon.abilities.includes("Chlorophyll")).map((pokemon) => pokemon.name);
+    return [
+      "Legal sun-team candidates from this Regulation MB catalog (choose and build sets yourself — do not copy template teams):",
+      `Drought: ${drought.join(", ") || "none"}`,
+      `Chlorophyll: ${chlorophyll.join(", ") || "none"}`,
+    ].join("\n");
+  }
+  if (latest.includes("trick room")) {
+    const trickRoom = catalogThemeCandidates("trick room");
+    return [
+      "Legal Trick Room candidates from this Regulation MB catalog (choose and build sets yourself):",
+      trickRoom.join(", ") || "none",
+    ].join("\n");
+  }
+  return "";
+}
+
+export function isFullTeamRequest(messages: BuildAssistMessage[], context: BuildAssistContext) {
+  const latest = [...messages].reverse().find((message) => message.role === "user")?.content.toLowerCase() ?? "";
+  return isFullTeamIntent(latest, context.teamSize);
+}
+
+function isFullTeamIntent(text: string, teamSize = 0) {
+  const latest = text.toLowerCase();
+  return /\b(?:full|complete|whole|entire)\s+(?:\w+\s+){0,3}team\b/.test(latest)
+    || /\bbuild(?:\s+me)?\s+a\s+(?:full|complete|whole)?\s*(?:\w+\s+){0,2}team\b/.test(latest)
+    || /\b(?:give|make|create)\s+me\s+(?:a\s+)?(?:full|complete|whole)?\s*(?:\w+\s+){0,2}team\b/.test(latest)
+    || /\b(?:6|six)[\s-]*(?:pok[eé]mon|mon|members?)\b/.test(latest)
+    || (teamSize === 0 && /\bteam\b/.test(latest) && /\b(?:rain|sun|trick room|full|complete|build)\b/.test(latest));
+}
+
+export function getBuildAssistMaxTokens(messages: BuildAssistMessage[], context: BuildAssistContext) {
+  return isFullTeamRequest(messages, context) ? 3600 : 900;
+}
+
+function isCompleteSetSuggestion(suggestion: BuildAssistSetSuggestion) {
+  return isLegalCatalogSet(suggestion);
+}
+
+const OFFENSIVE_SPECIAL_NATURES = new Set(["Modest", "Timid", "Rash", "Quiet", "Mild"]);
+const OFFENSIVE_PHYSICAL_NATURES = new Set(["Adamant", "Jolly", "Brave", "Lonely", "Naughty"]);
+const DEFENSIVE_NATURES = new Set(["Bold", "Calm", "Careful", "Relaxed", "Impish", "Sassy"]);
+
+function defaultEvsForSet(suggestion: BuildAssistSetSuggestion) {
+  const nature = suggestion.nature;
+  if (!nature) return undefined;
+  if (OFFENSIVE_SPECIAL_NATURES.has(nature)) {
+    return sanitizeActionSpread({ HP: 32, SpA: 32, Spe: 2 }) ?? undefined;
+  }
+  if (OFFENSIVE_PHYSICAL_NATURES.has(nature)) {
+    return sanitizeActionSpread({ HP: 32, Atk: 32, Spe: 2 }) ?? undefined;
+  }
+  if (DEFENSIVE_NATURES.has(nature)) {
+    return sanitizeActionSpread({ HP: 32, Def: 32, SpD: 2 }) ?? undefined;
+  }
+  return sanitizeActionSpread({ HP: 32, Atk: 16, SpA: 16, Spe: 2 }) ?? undefined;
+}
+
+function preferredAbilityForContext(pokemon: PokemonData, contextText: string) {
+  const text = contextText.toLowerCase();
+  if (text.includes("sun") && pokemon.abilities.includes("Chlorophyll")) return "Chlorophyll";
+  if (text.includes("rain") && pokemon.abilities.includes("Swift Swim")) return "Swift Swim";
+  if (text.includes("sand") && pokemon.abilities.includes("Sand Rush")) return "Sand Rush";
+  if (text.includes("snow") && pokemon.abilities.includes("Slush Rush")) return "Slush Rush";
+  return pokemon.abilities[0];
+}
+
+function preferredItemForSet(pokemon: PokemonData, suggestion: BuildAssistSetSuggestion, usedItems = new Set<string>()) {
+  return pickUniqueItemForPokemon(pokemon, suggestion, usedItems) ?? "";
+}
+
+function teamUsedItems(team: PokemonBuild[]) {
+  return new Set(team.map((build) => build.item).filter(Boolean));
+}
+
+function pickUniqueItemForPokemon(
+  pokemon: PokemonData,
+  suggestion: BuildAssistSetSuggestion,
+  usedItems: Set<string>,
+): string | undefined {
+  const candidates: string[] = [];
+  if (suggestion.megaForm) {
+    const form = pokemon.megaForms?.find((entry) => entry.name === suggestion.megaForm);
+    const stone = form ? megaStoneForForm(pokemon, form) : undefined;
+    if (stone) candidates.push(stone);
+  }
+  if (suggestion.item && pokemon.items.includes(suggestion.item)) {
+    candidates.unshift(suggestion.item);
+  }
+  for (const item of BUILDER_ITEM_PRIORITY) {
+    if (pokemon.items.includes(item)) candidates.push(item);
+  }
+  for (const item of pokemon.items) {
+    if (!isMegaStoneItem(item) || suggestion.megaForm) candidates.push(item);
+  }
+
+  const seen = new Set<string>();
+  for (const item of candidates) {
+    if (!item || seen.has(item)) continue;
+    seen.add(item);
+    if (!usedItems.has(item)) return item;
+  }
+  return undefined;
+}
+
+function applyItemClauseToAdd(
+  action: Extract<BuildAssistAction, { type: "add_pokemon" }>,
+  usedItems: Set<string>,
+): Extract<BuildAssistAction, { type: "add_pokemon" }> {
+  const pokemon = findCatalogPokemon(action.pokemon);
+  if (!pokemon) return action;
+
+  const item = action.item?.trim();
+  if (item && !usedItems.has(item)) {
+    usedItems.add(item);
+    return action;
+  }
+
+  const replacement = pickUniqueItemForPokemon(pokemon, action, usedItems);
+  if (replacement) {
+    usedItems.add(replacement);
+    return { ...action, item: replacement };
+  }
+
+  return action;
+}
+
+function enforceItemClauseOnActions(actions: BuildAssistAction[], team: PokemonBuild[]) {
+  const usedItems = teamUsedItems(team);
+  return actions.map((action) => (
+    action.type === "add_pokemon" ? applyItemClauseToAdd(action, usedItems) : action
+  ));
+}
+
+function preferredNatureForPokemon(pokemon: PokemonData) {
+  const { Atk, SpA, Spe, Def, SpD } = pokemon.stats;
+  if (SpA >= Atk && SpA >= Spe) return "Modest";
+  if (Atk >= SpA && Spe >= Math.max(Atk, SpA)) return "Jolly";
+  if (Atk >= SpA) return "Adamant";
+  if (SpA > Atk) return "Modest";
+  if (Def >= SpD) return "Bold";
+  if (SpD > Def) return "Calm";
+  return "Hardy";
+}
+
+function preferredMovesForPokemon(pokemon: PokemonData) {
+  const prioritized = DOUBLES_MOVE_PRIORITY.filter((move) => pokemon.moves.includes(move));
+  const rest = pokemon.moves.filter((move) => !prioritized.includes(move));
+  return [...prioritized, ...rest].slice(0, 4);
+}
+
+function fillMissingCatalogSetFields(
+  suggestion: BuildAssistSetSuggestion,
+  contextText: string,
+): BuildAssistSetSuggestion {
+  const pokemon = findCatalogPokemon(suggestion.pokemon);
+  if (!pokemon) return suggestion;
+
+  const withMega = applyMegaIntent(suggestion, contextText);
+  const nature = withMega.nature && ALL_NATURES.includes(withMega.nature)
+    ? withMega.nature
+    : preferredNatureForPokemon(pokemon);
+  const ability = withMega.ability && legalAbilitiesForSet(pokemon, withMega.megaForm).includes(withMega.ability)
+    ? withMega.ability
+    : preferredAbilityForContext(pokemon, contextText);
+  const item = withMega.item && pokemon.items.includes(withMega.item)
+    ? withMega.item
+    : preferredItemForSet(pokemon, withMega);
+  const explicitMoves = withMega.moves?.filter(Boolean) ?? [];
+  const moves = explicitMoves.length >= 4
+    ? explicitMoves.slice(0, 4)
+    : preferredMovesForPokemon(pokemon);
+  const evs = sanitizeActionSpread(withMega.evs ?? {})
+    ?? defaultEvsForSet({ ...withMega, nature })
+    ?? sanitizeActionSpread({ HP: 32, SpA: 32, Spe: 2 })
+    ?? undefined;
+
+  return {
+    ...withMega,
+    ability,
+    item,
+    nature,
+    moves,
+    evs,
+  };
+}
+
+function finalizeAddPokemonAction(
+  action: Extract<BuildAssistAction, { type: "add_pokemon" }>,
+  reply: string,
+  allMentionNames: string[],
+  requireComplete: boolean,
+  conversationText = reply,
+  fillMissingSets = false,
+): Extract<BuildAssistAction, { type: "add_pokemon" }> | null {
+  const enriched = resolveAddPokemonAction(action.pokemon, reply, allMentionNames, action);
+  if (!enriched || !isCatalogPokemon(enriched.pokemon)) return null;
+
+  let result: Extract<BuildAssistAction, { type: "add_pokemon" }> = {
+    type: "add_pokemon",
+    ...applyMegaIntent(enriched, `${conversationText}\n${reply}`),
+    pokemon: enriched.pokemon,
+  };
+  const section = bestSectionForPokemon(reply, result.pokemon, allMentionNames);
+  if (!sanitizeActionSpread(result.evs ?? {})) {
+    const parsedEvs = parseEvsFromText(section);
+    if (parsedEvs) {
+      result = { ...result, evs: sanitizeActionSpread(parsedEvs) ?? normalizeActionSpread(parsedEvs) ?? result.evs };
+    }
+  }
+  if (!sanitizeActionSpread(result.evs ?? {})) {
+    const fallbackEvs = defaultEvsForSet(result);
+    if (fallbackEvs) result = { ...result, evs: fallbackEvs };
+  }
+
+  if (requireComplete && !isCompleteSetSuggestion(result) && fillMissingSets) {
+    result = {
+      type: "add_pokemon",
+      ...fillMissingCatalogSetFields(result, `${conversationText}\n${reply}`),
+      pokemon: result.pokemon,
+    };
+  }
+
+  if (requireComplete && !isCompleteSetSuggestion(result)) return null;
+  return result;
+}
+
 export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messages: BuildAssistMessage[] = []) {
+  const fullTeamRequest = isFullTeamRequest(messages, context);
+  const slotsToFill = Math.max(0, context.maxTeamSize - context.teamSize);
+  const themeCatalogHint = buildThemeCatalogHint(messages, context);
   const teamBlock = context.pokemon.length
     ? context.pokemon.map((mon) => {
       const evSummary = (["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as StatKey[])
@@ -223,23 +718,45 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "Default to compact builder notes, not long articles.",
     "Keep most answers to 2-4 short bullets or one short paragraph.",
     "Recommend one clear next step first. Add more options only if the user asks for a list.",
+    ...(fullTeamRequest ? [
+      `FULL TEAM REQUEST: the user wants ${slotsToFill || 6} Pokémon with complete sets. Ignore the one-step-only rule for this answer.`,
+      `Include exactly ${slotsToFill || 6} add_pokemon actions in one [[PANE_ACTIONS:...]] block — one per team slot needed.`,
+      "Every add_pokemon action MUST include all of: ability, item, nature, exactly 4 moves, and evs that total 66 (32 max per stat).",
+      "Every suggested held item must be unique across all add_pokemon actions and items already on the user's team (VGC item clause).",
+      "Do not stop after one Pokémon. Do not tell the user to ask again for the rest — deliver the full roster in this single response.",
+      "Give a short overview in visible prose (one line per Pokémon role), then the hidden action block with all sets.",
+      "Every Pokémon named in the team overview must appear in PANE_ACTIONS — include one add_pokemon action per roster member with no omissions.",
+      "For a rain team: one Drizzle setter, Swift Swim abusers, Intimidate/Fake Out support, redirection, and type coverage — six distinct species, no duplicates.",
+    ] : []),
     "Avoid markdown headings, tables, bold labels, and long templates unless the user explicitly asks.",
     "Mention only the key tradeoff when relevant.",
     "Assume level 50 with 32 Stat Points max per stat and 66 total per Pokémon.",
+    "VGC item clause: every held item on a team must be unique — never assign the same item to two Pokémon across the current roster and your add_pokemon actions in one answer.",
+    "When suggesting a full team or multiple Pokémon, give each a different legal held item (vary Life Orb, Focus Sash, Sitrus Berry, Leftovers, Choice items, etc.).",
     "Only suggest Pokémon from the Regulation MB roster below. Never invent Pokémon, moves, abilities, or items.",
+    "Before every add_pokemon or update_set, verify the species name appears verbatim in the roster. If it does not, pick a different legal species instead.",
+    "Examples in this prompt show JSON format only — never copy species, sets, or full teams from examples. Reason from the user's request, current team, and catalog entries.",
     "When you recommend a move, ability, or item, use the exact catalog name from the detailed entries.",
     "If a suggested option is not in that Pokémon's legal list, do not recommend it.",
     "When the team is incomplete, prioritize what to add next and why.",
+    "Read the team composition summary and current roster before every suggestion. Build synergistically off what is already there.",
+    "When the user asks for one more Pokémon or to round out the team, identify the biggest missing role (type coverage, Intimidate, Fake Out, speed control, weather abuse, Trick Room, redirection) and suggest exactly one new species that fills that gap.",
+    "Never suggest a Pokémon already on the team or listed under excluded species.",
+    "Never repeat a Pokémon you already suggested earlier in this chat unless the user explicitly asks to revisit that species.",
+    "If the team already has a weather setter (Drizzle, Drought, Snow Warning, or Sand Stream), do not suggest another weather setter — suggest partners that benefit from that weather instead.",
+    "Do not stack redundant roles (two Intimidate users, two Trick Room setters, two Tailwind users) unless the user asks for a specific strategy.",
+    "When rain is active, favor Swift Swim users and rain-boosted moves from the catalog — never a second Drizzle setter.",
     "Pane Build Assist is an education tool — teach VGC and doubles fundamentals here. Never tell users to go read external guides, watch videos elsewhere, or learn on their own when they ask to learn.",
     "When the user asks where to start, how VGC works, or similar beginner questions: explain doubles basics in plain language (2v2, Protect, team roles, turn order), recommend one beginner-friendly Regulation MB Pokémon to try first, teach why it is a good learning pick, and include one add_pokemon action with a simple legal starter set they can apply immediately.",
     "Always write the teaching in the visible reply (2-4 sentences or short bullets). Do not rely on the action card reason alone — the chat text is the lesson, the card is the hands-on next step.",
-    "If the team is empty and no other pick fits better, default to Incineroar as the first recommendation — Intimidate, Fake Out, and a support role are easy to understand. Pelipper and Torkoal are fine alternatives when rain or sun and Trick Room are the teaching angle.",
+    "If the team is empty and no other pick fits better, recommend one beginner-friendly Regulation MB Pokémon from the roster with reasoning tailored to the user's request.",
     "When the user asks follow-up questions about a Pokémon, role, move, item, or VGC concept you mentioned, go deeper in chat — explain what it does in battle, when to click it, common partners, and beginner mistakes. Keep teaching; do not deflect.",
     "Educational answers can run longer than usual (a short paragraph plus bullets is fine). Skip add_pokemon or update_set only when the user is asking a purely conceptual question with no Pokémon to try.",
     "When a Pokémon is selected, weight advice toward building around or supporting that mon.",
     "When the user asks to build, tighten, max stats, or apply a set for the selected Pokémon, include one update_set action with that species and the full ability, item, nature, moves, and evs.",
     "Use update_set only for Pokémon already on the team. If the team is empty or the species is not on the team yet, use add_pokemon instead.",
-    "When the team is empty and the user names a Pokémon to build around, the first add_pokemon action must be that species with a full starter set.",
+    "When the user names a Mega form (e.g. Mega Charizard Y), include megaForm in add_pokemon/update_set (internal id like Charizard-Mega-Y), the matching mega stone as item (e.g. Charizardite Y), and a legal base ability from the catalog (e.g. Blaze). Mega battle abilities come from the form.",
+    "When building around a mega core, the anchor Pokémon's add_pokemon action must use its mega stone — never a generic booster like Charcoal instead of the stone.",
     "Do not default to generic partners like Whimsicott unless the user asks for speed control or the current team clearly needs Tailwind.",
     "Do not ask the user to confirm in chat when update_set is available — the apply card is the confirmation step.",
     "Keep visible replies to 1-2 short sentences when update_set is included; the card shows the full set. add_pokemon teaching answers should keep the longer visible explanation.",
@@ -253,13 +770,8 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "Never print raw JSON in the visible reply. Raw JSON belongs only inside the hidden PANE_ACTIONS block.",
     "Allowed action types: add_pokemon; update_set with pokemon plus optional item, ability, nature, moves, evs; apply_spread with evs; set_item with item; set_ability with ability; set_nature with nature; set_moves with moves.",
     "Prefer one update_set action over separate apply_spread, set_moves, set_item, set_ability, and set_nature actions for the same Pokémon.",
-    "When suggesting a partner, include a starter set in the add_pokemon action whenever possible: ability, item, nature, moves, and evs.",
-    "Hidden update example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"update_set\",\"pokemon\":\"Basculegion\",\"ability\":\"Adaptability\",\"item\":\"Life Orb\",\"nature\":\"Jolly\",\"moves\":[\"Wave Crash\",\"Liquidation\",\"Crunch\",\"Protect\"],\"evs\":{\"HP\":36,\"Atk\":32,\"Spe\":32},\"reason\":\"Max Attack and Speed spread.\"}]}]]",
-    "Hidden multi-add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Armarouge\",\"ability\":\"Flash Fire\",\"item\":\"Assault Vest\",\"nature\":\"Modest\",\"moves\":[\"Armor Cannon\",\"Expanding Force\",\"Heat Wave\",\"Protect\"],\"evs\":{\"HP\":32,\"SpA\":32,\"SpD\":2},\"reason\":\"Trick Room attacker with bulk.\"},{\"type\":\"add_pokemon\",\"pokemon\":\"Torkoal\",\"ability\":\"Drought\",\"item\":\"Charcoal\",\"nature\":\"Quiet\",\"moves\":[\"Eruption\",\"Heat Wave\",\"Protect\",\"Solar Beam\"],\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Sun plus Trick Room support.\"}]}]]",
-    "Hidden add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Torkoal\",\"ability\":\"Drought\",\"item\":\"Charcoal\",\"nature\":\"Quiet\",\"moves\":[\"Eruption\",\"Heat Wave\",\"Protect\",\"Solar Beam\"],\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Sun plus Trick Room support.\"}]}]]",
-    "Hidden beginner example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Incineroar\",\"ability\":\"Intimidate\",\"item\":\"Sitrus Berry\",\"nature\":\"Careful\",\"moves\":[\"Fake Out\",\"Flare Blitz\",\"Parting Shot\",\"Protect\"],\"evs\":{\"HP\":32,\"Def\":32,\"SpD\":2},\"reason\":\"Classic support — Intimidate weakens physical hits and Fake Out buys your partner a free turn.\"}]}]]",
-    "Hidden spread example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"apply_spread\",\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Keeps offense while adding bulk.\"}]}]]",
-    "Hidden moves example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"set_moves\",\"moves\":[\"Protect\",\"Armor Cannon\",\"Expanding Force\",\"Trick Room\"]}]}]]",
+    "When suggesting a partner, include a starter set in the add_pokemon action whenever possible: ability, item, nature, moves, and evs from that Pokémon's catalog entry.",
+    "Hidden action format example (syntax only — invent your own legal sets): [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"<roster name>\",\"megaForm\":\"<form id if mega>\",\"ability\":\"<legal ability>\",\"item\":\"<legal item>\",\"nature\":\"<nature>\",\"moves\":[\"<move>\",\"<move>\",\"<move>\",\"<move>\"],\"evs\":{\"HP\":32,\"SpA\":32,\"SpD\":2},\"reason\":\"<why this fits the team>\"}]}]]",
     "Only include actions you would be comfortable asking the user to approve. Keep visible prose natural and do not mention the hidden block.",
     "",
     `Format: ${context.format}`,
@@ -274,8 +786,16 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
       : "Detailed Regulation MB catalog: add a Pokémon to the team or mention one in chat to load legal options.",
     catalogDetailBlock || "(none loaded yet)",
     "",
+    ...(themeCatalogHint ? [themeCatalogHint, ""] : []),
     "Current team:",
     teamBlock,
+    "",
+    "Team composition analysis:",
+    context.teamComposition,
+    "",
+    context.excludedSpecies.length
+      ? `Excluded species (already on team or suggested earlier — do not recommend again): ${context.excludedSpecies.join(", ")}`
+      : "Excluded species: none yet.",
   ].join("\n");
 }
 
@@ -415,14 +935,15 @@ function inferPartialSetActions(payload: string): BuildAssistAction[] {
       }
     }
 
-    actions.push(readSetAction(type, pokemonMatch[1], {
+    const setAction = readSetAction(type, pokemonMatch[1], {
       item: readField("item"),
       ability: readField("ability"),
       nature: readField("nature"),
       moves,
       evs: Object.keys(evs).length ? evs : undefined,
       reason: readField("reason"),
-    }, readField("reason")));
+    }, readField("reason"));
+    if (setAction) actions.push(setAction);
   }
 
   return actions;
@@ -532,11 +1053,15 @@ function readSetAction(
   pokemon: string,
   candidate: Record<string, unknown>,
   reason?: string,
-): Extract<BuildAssistAction, { type: "add_pokemon" | "update_set" }> {
+): Extract<BuildAssistAction, { type: "add_pokemon" | "update_set" }> | null {
+  const species = pokemon.trim();
+  if (!species || !isCatalogPokemon(species)) return null;
+
   return {
     type,
-    pokemon,
+    pokemon: species,
     reason,
+    megaForm: typeof candidate.megaForm === "string" ? candidate.megaForm : undefined,
     item: typeof candidate.item === "string" ? candidate.item : undefined,
     ability: typeof candidate.ability === "string" ? candidate.ability : undefined,
     nature: typeof candidate.nature === "string" ? candidate.nature : undefined,
@@ -680,6 +1205,8 @@ function scorePokemonSection(section: string) {
 }
 
 function bestSectionForPokemon(reply: string, pokemonName: string, allMentionNames: string[]) {
+  if (!pokemonName.trim()) return "";
+
   const regex = new RegExp(`\\b${escapeRegExp(pokemonName)}\\b`, "gi");
   const sections: string[] = [];
   let match: RegExpExecArray | null = regex.exec(reply);
@@ -687,12 +1214,13 @@ function bestSectionForPokemon(reply: string, pokemonName: string, allMentionNam
     const start = match.index;
     let end = reply.length;
     for (const other of allMentionNames) {
-      if (other.toLowerCase() === pokemonName.toLowerCase()) continue;
+      if (!other.trim() || other.toLowerCase() === pokemonName.toLowerCase()) continue;
       const otherIndex = reply.slice(start + 1).search(new RegExp(`\\b${escapeRegExp(other)}\\b`, "i"));
       if (otherIndex >= 0) end = Math.min(end, start + 1 + otherIndex);
     }
-    sections.push(reply.slice(start, end));
+    if (end > start) sections.push(reply.slice(start, end));
     match = regex.exec(reply);
+    if (sections.length >= 32) break;
   }
   if (!sections.length) return "";
   return sections.sort((left, right) => scorePokemonSection(right) - scorePokemonSection(left))[0];
@@ -715,6 +1243,7 @@ function mergeAddPokemonFields(
     type: "add_pokemon",
     pokemon: explicit.pokemon,
     reason: explicit.reason ?? parsed.reason,
+    megaForm: pick(parsed.megaForm, explicit.megaForm),
     ability: pick(parsed.ability, explicit.ability),
     item: pick(parsed.item, explicit.item),
     nature: pick(parsed.nature, explicit.nature),
@@ -804,6 +1333,7 @@ function mergeSetFields(
   return {
     pokemon: explicit.pokemon,
     reason: explicit.reason ?? parsed.reason,
+    megaForm: pick(parsed.megaForm, explicit.megaForm),
     ability: pick(parsed.ability, explicit.ability),
     item: pick(parsed.item, explicit.item),
     nature: pick(parsed.nature, explicit.nature),
@@ -842,14 +1372,25 @@ function resolveUpdateSetAction(
   reply: string,
   allMentionNames: string[],
   explicit?: Extract<BuildAssistAction, { type: "update_set" }>,
+  conversationText = reply,
 ): Extract<BuildAssistAction, { type: "update_set" }> | null {
   const section = bestSectionForPokemon(reply, pokemonName, allMentionNames);
   const sectionScore = scorePokemonSection(section);
   const parsed = parseSetSuggestionFromSection(pokemonName, section, explicit?.reason);
   if (!parsed && !explicit) return null;
-  if (!parsed) return explicit ?? null;
-  if (!explicit) return { type: "update_set", ...parsed };
-  return { type: "update_set", ...mergeSetFields(explicit, parsed, sectionScore) };
+  if (!parsed) {
+    return explicit
+      ? { type: "update_set", ...applyMegaIntent(explicit, `${conversationText}\n${reply}`), pokemon: explicit.pokemon }
+      : null;
+  }
+  if (!explicit) {
+    return { type: "update_set", ...applyMegaIntent(parsed, `${conversationText}\n${reply}`), pokemon: parsed.pokemon };
+  }
+  return {
+    type: "update_set",
+    ...applyMegaIntent(mergeSetFields(explicit, parsed, sectionScore), `${conversationText}\n${reply}`),
+    pokemon: explicit.pokemon,
+  };
 }
 
 function convertOnTeamAddsToUpdates(actions: BuildAssistAction[], team: PokemonBuild[]) {
@@ -935,18 +1476,49 @@ export function parseAddPokemonActionsFromReply(reply: string, team: PokemonBuil
   );
 }
 
+export type MergeAssistOptions = {
+  excludedSpecies?: Set<string>;
+  blockWeatherSetters?: boolean;
+  requireCompleteSets?: boolean;
+  skipProseAdds?: boolean;
+  conversationText?: string;
+  fillMissingTeamAdds?: boolean;
+};
+
+function shouldKeepAssistAdd(
+  action: Extract<BuildAssistAction, { type: "add_pokemon" }>,
+  options: MergeAssistOptions,
+) {
+  const species = action.pokemon.toLowerCase();
+  if (options.excludedSpecies?.has(species)) return false;
+  if (options.blockWeatherSetters && actionAddsWeatherSetter(action)) return false;
+  return true;
+}
+
 export function mergeBuildAssistActions(
   actions: BuildAssistAction[],
   reply: string,
   team: PokemonBuild[],
   selectedId: string | null = null,
+  options: MergeAssistOptions = {},
 ) {
   const selected = team.find((pokemon) => pokemon.id === selectedId) ?? null;
   const selectedSpecies = selected?.species ?? null;
   const teamSpecies = new Set(team.map((pokemon) => pokemon.species.toLowerCase()));
+  const excludedSpecies = options.excludedSpecies ?? teamSpecies;
+  const blockWeatherSetters = options.blockWeatherSetters ?? teamHasWeatherSetter(team);
+  const mergeOptions: MergeAssistOptions = { excludedSpecies, blockWeatherSetters, ...options };
+  const requireCompleteSets = mergeOptions.requireCompleteSets ?? true;
   const mentions = findPokemonNamesInText(reply);
+  const conversationText = mergeOptions.conversationText ?? reply;
+  const fillMissingSets = mergeOptions.fillMissingTeamAdds
+    ?? isFullTeamIntent(conversationText, team.length);
 
-  let working = convertOnTeamAddsToUpdates(actions, team);
+  let working = actions.filter((action) => {
+    if (action.type !== "add_pokemon" && action.type !== "update_set") return true;
+    return Boolean(action.pokemon.trim());
+  });
+  working = convertOnTeamAddsToUpdates(working, team);
   working = coalescePatchActions(working, selectedSpecies);
 
   const updateBySpecies = new Map<string, Extract<BuildAssistAction, { type: "update_set" }>>();
@@ -955,17 +1527,25 @@ export function mergeBuildAssistActions(
 
   for (const action of working) {
     if (action.type === "update_set") {
-      const enriched = resolveUpdateSetAction(action.pokemon, reply, mentions, action) ?? action;
+      const enriched = resolveUpdateSetAction(action.pokemon, reply, mentions, action, conversationText) ?? action;
       updateBySpecies.set(enriched.pokemon.toLowerCase(), enriched);
       continue;
     }
     if (action.type === "add_pokemon") {
-      const enriched = resolveAddPokemonAction(action.pokemon, reply, mentions, action) ?? action;
-      if (teamSpecies.has(enriched.pokemon.toLowerCase())) {
-        const { type: _type, ...fields } = enriched;
-        updateBySpecies.set(enriched.pokemon.toLowerCase(), { type: "update_set", ...fields });
-      } else {
-        adds.push(enriched);
+      const finalized = finalizeAddPokemonAction(
+        action,
+        reply,
+        mentions,
+        requireCompleteSets,
+        conversationText,
+        fillMissingSets,
+      );
+      if (!finalized) continue;
+      if (teamSpecies.has(finalized.pokemon.toLowerCase())) {
+        const { type: _type, ...fields } = finalized;
+        updateBySpecies.set(finalized.pokemon.toLowerCase(), { type: "update_set", ...fields });
+      } else if (shouldKeepAssistAdd(finalized, mergeOptions)) {
+        adds.push(finalized);
       }
       continue;
     }
@@ -984,10 +1564,22 @@ export function mergeBuildAssistActions(
   }
 
   const coveredAdds = new Set(adds.map((action) => action.pokemon.toLowerCase()));
-  for (const inferred of parseAddPokemonActionsFromReply(reply, team)) {
-    if (coveredAdds.has(inferred.pokemon.toLowerCase()) || teamSpecies.has(inferred.pokemon.toLowerCase())) continue;
-    adds.push(inferred);
-    coveredAdds.add(inferred.pokemon.toLowerCase());
+  if (!mergeOptions.skipProseAdds) {
+    for (const inferred of parseAddPokemonActionsFromReply(reply, team)) {
+      if (coveredAdds.has(inferred.pokemon.toLowerCase()) || excludedSpecies.has(inferred.pokemon.toLowerCase())) continue;
+      if (!shouldKeepAssistAdd(inferred, mergeOptions)) continue;
+      const finalized = finalizeAddPokemonAction(
+        inferred,
+        reply,
+        mentions,
+        requireCompleteSets,
+        conversationText,
+        fillMissingSets,
+      );
+      if (!finalized) continue;
+      adds.push(finalized);
+      coveredAdds.add(finalized.pokemon.toLowerCase());
+    }
   }
 
   for (const [species, action] of [...updateBySpecies.entries()]) {
@@ -997,12 +1589,29 @@ export function mergeBuildAssistActions(
       continue;
     }
     const { type: _type, ...fields } = action;
-    adds.push({ type: "add_pokemon", ...fields });
+    const addAction = { type: "add_pokemon" as const, ...fields };
+    if (!shouldKeepAssistAdd(addAction, mergeOptions)) {
+      updateBySpecies.delete(species);
+      continue;
+    }
+    const finalized = finalizeAddPokemonAction(
+      addAction,
+      reply,
+      mentions,
+      requireCompleteSets,
+      conversationText,
+      fillMissingSets,
+    );
+    if (!finalized) {
+      updateBySpecies.delete(species);
+      continue;
+    }
+    adds.push(finalized);
     updateBySpecies.delete(species);
     coveredAdds.add(species);
   }
 
-  return [...others, ...updateBySpecies.values(), ...adds];
+  return [...enforceItemClauseOnActions([...others, ...updateBySpecies.values(), ...adds], team)];
 }
 
 export function normalizeActionSpread(rawEvs: Partial<Record<StatKey, number>>) {
@@ -1053,7 +1662,10 @@ export function resolveSetChanges(
   const suggestedMoves = action.moves?.filter(Boolean).slice(0, 4)
     .map((move) => matchCatalogMove(move, pokemon.moves))
     .filter((move): move is string => Boolean(move)) ?? [];
-  const ability = action.ability && pokemon.abilities.includes(action.ability) ? action.ability : undefined;
+  const megaFormName = action.megaForm
+    ?? (action.item ? findMegaFormByItem(pokemon, action.item)?.name : undefined);
+  const legalAbilities = legalAbilitiesForSet(pokemon, megaFormName);
+  const ability = action.ability && legalAbilities.includes(action.ability) ? action.ability : undefined;
   const item = action.item && pokemon.items.includes(action.item) ? action.item : undefined;
   const nature = action.nature && ALL_NATURES.includes(action.nature) ? action.nature : undefined;
   const evs = action.evs ? sanitizeActionSpread(action.evs) ?? normalizeActionSpread(action.evs) ?? undefined : undefined;
@@ -1062,6 +1674,7 @@ export function resolveSetChanges(
     item,
     ability,
     nature,
+    megaForm: megaFormName,
     moves: suggestedMoves.length ? [...suggestedMoves, "", "", "", ""].slice(0, 4) : undefined,
     evs,
   };

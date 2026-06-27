@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Sparkles, X } from "lucide-react";
 import {
   BUILD_ASSIST_STARTERS,
   BUILD_ASSIST_VGC_STARTER,
   type BuildAssistAction,
+  type BuildAssistMessage,
   buildAssistContext,
   formatActionSpread,
   mergeBuildAssistActions,
@@ -17,25 +18,61 @@ import {
   shouldHideAssistProse,
   spreadWasAdjusted,
   streamBuildAssistMessage,
-  type BuildAssistMessage,
+  teamHasWeatherSetter,
 } from "../../lib/build-assist";
-import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, POKEMON, type PokemonBuild, type StatKey } from "../../lib/pokemon";
+import type { BuildAssistPendingAction, BuildAssistSessionControls, BuildAssistTurn } from "../../lib/build-assist-session";
+import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, formatMegaDisplayName, POKEMON, type PokemonBuild, type StatKey } from "../../lib/pokemon";
 
 const STAT_KEYS: StatKey[] = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"];
 
-export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPokemon, onRemovePokemon, onUpdateSelected }: {
+function collectPriorSuggestedSpecies(turns: BuildAssistTurn[], beforeIndex = turns.length) {
+  const species: string[] = [];
+  const seen = new Set<string>();
+  for (let index = 0; index < beforeIndex; index += 1) {
+    for (const pending of turns[index]?.actions ?? []) {
+      const action = pending.action;
+      if (action.type !== "add_pokemon" && action.type !== "update_set") continue;
+      const key = action.pokemon.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      species.push(action.pokemon);
+    }
+  }
+  return species;
+}
+
+function buildMergeOptions(team: PokemonBuild[], turns: BuildAssistTurn[], beforeIndex = turns.length) {
+  const excluded = new Set(team.map((pokemon) => pokemon.species.toLowerCase()));
+  for (const species of collectPriorSuggestedSpecies(turns, beforeIndex)) {
+    excluded.add(species.toLowerCase());
+  }
+  const conversationText = turns.slice(0, beforeIndex).map((turn) => turn.content).filter(Boolean).join("\n");
+  return {
+    excludedSpecies: excluded,
+    blockWeatherSetters: teamHasWeatherSetter(team),
+    conversationText,
+  };
+}
+
+export function BuildAssistBubble({
+  team,
+  selectedId,
+  mode = "launcher",
+  session,
+  onAddPokemon,
+  onRemovePokemon,
+  onUpdateSelected,
+}: {
   team: PokemonBuild[];
   selectedId: string | null;
   mode?: "launcher" | "panel";
+  session: BuildAssistSessionControls;
   onAddPokemon?: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
   onRemovePokemon?: (pokemonId: string) => void;
   onUpdateSelected?: (changes: Partial<PokemonBuild>) => void;
 }) {
   const isPanelMode = mode === "panel";
-  const [open, setOpen] = useState(isPanelMode);
-  const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<BuildAssistMessage[]>([]);
-  const [actions, setActions] = useState<BuildAssistPendingAction[]>([]);
+  const { turns, setTurns, open, setOpen, draft, setDraft, clearChat } = session;
   const [streamingActions, setStreamingActions] = useState<BuildAssistPendingAction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +80,10 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const streamReplyRef = useRef("");
 
-  const context = useMemo(() => buildAssistContext(team, selectedId), [selectedId, team]);
+  const context = useMemo(
+    () => buildAssistContext(team, selectedId, { priorSuggestedSpecies: collectPriorSuggestedSpecies(turns) }),
+    [selectedId, team, turns],
+  );
   const selectedName = context.pokemon.find((mon) => mon.selected)?.displayName ?? null;
 
   useEffect(() => {
@@ -55,51 +95,78 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
     const node = scrollRef.current;
     if (!node) return;
     node.scrollTop = node.scrollHeight;
-  }, [messages, loading, open, streamingActions, actions]);
+  }, [turns, loading, open, streamingActions]);
 
-  const updateStreamingState = (rawReply: string) => {
-    const streamed = parseBuildAssistStream(rawReply);
-    const visibleActions = mergeBuildAssistActions(streamed.actions ?? [], streamed.reply, team, selectedId);
-    setStreamingActions(visibleActions.map((action, index) => ({ id: `stream-${index}`, action })));
-    return streamed;
+  const updateStreamingState = (rawReply: string, mergeBeforeIndex: number) => {
+    const mergeOptions = buildMergeOptions(team, turns, mergeBeforeIndex);
+    try {
+      const streamed = parseBuildAssistStream(rawReply);
+      const visibleActions = mergeBuildAssistActions(streamed.actions ?? [], streamed.reply, team, selectedId, mergeOptions);
+      setStreamingActions(visibleActions.map((action, index) => ({ id: `stream-${index}`, action })));
+      return streamed;
+    } catch {
+      const streamed = parseBuildAssistStream(rawReply);
+      const fallbackActions = (streamed.actions ?? []).filter((action) => {
+        if (action.type !== "add_pokemon" && action.type !== "update_set") return true;
+        return Boolean(action.pokemon.trim());
+      });
+      setStreamingActions(fallbackActions.map((action, index) => ({ id: `stream-${index}`, action })));
+      return streamed;
+    }
   };
 
   const submitMessage = async (rawMessage: string) => {
     const content = rawMessage.trim();
     if (!content || loading) return;
 
-    const nextMessages: BuildAssistMessage[] = [...messages, { role: "user", content }];
-    const assistantIndex = nextMessages.length;
-    setMessages([...nextMessages, { role: "assistant", content: "" }]);
+    const nextTurns: BuildAssistTurn[] = [...turns, { role: "user", content }, { role: "assistant", content: "" }];
+    const assistantIndex = nextTurns.length - 1;
+    const requestMessages: BuildAssistMessage[] = nextTurns.map(({ role, content: turnContent }) => ({
+      role,
+      content: turnContent,
+    }));
+    const requestContext = buildAssistContext(team, selectedId, {
+      priorSuggestedSpecies: collectPriorSuggestedSpecies(turns),
+    });
+
+    setTurns(nextTurns);
     setDraft("");
     setError(null);
-    setActions([]);
     setStreamingActions([]);
     streamReplyRef.current = "";
     setLoading(true);
 
     try {
-      const { reply, actions: proposedActions = [] } = await streamBuildAssistMessage(nextMessages, context, (delta) => {
+      const { reply, actions: proposedActions = [] } = await streamBuildAssistMessage(requestMessages, requestContext, (delta) => {
         streamReplyRef.current += delta;
-        const streamed = updateStreamingState(streamReplyRef.current);
+        const streamed = updateStreamingState(streamReplyRef.current, assistantIndex);
         const visibleReply = shouldHideAssistProse(streamed.reply, streamed.actions ?? [])
           ? ""
           : streamed.reply;
-        setMessages((current) => current.map((message, index) => (
+        setTurns((current) => current.map((turn, index) => (
           index === assistantIndex
-            ? { ...message, content: visibleReply }
-            : message
+            ? { ...turn, content: visibleReply }
+            : turn
         )));
       });
-      const visibleActions = mergeBuildAssistActions(proposedActions, reply, team, selectedId);
+      const mergeOptions = buildMergeOptions(team, nextTurns, assistantIndex);
+      const visibleActions = mergeBuildAssistActions(proposedActions, reply, team, selectedId, mergeOptions);
       const visibleReply = shouldHideAssistProse(reply, visibleActions) ? "" : reply;
-      setMessages((current) => current.map((message, index) => (
-        index === assistantIndex ? { ...message, content: visibleReply } : message
+      setTurns((current) => current.map((turn, index) => (
+        index === assistantIndex
+          ? {
+              ...turn,
+              content: visibleReply,
+              actions: visibleActions.map((action, actionIndex) => ({
+                id: `${Date.now()}-${actionIndex}`,
+                action,
+              })),
+            }
+          : turn
       )));
-      setActions(visibleActions.map((action, index) => ({ id: `${Date.now()}-${index}`, action })));
       setStreamingActions([]);
     } catch (submitError) {
-      setMessages((current) => current.filter((_, index) => index !== assistantIndex));
+      setTurns((current) => current.slice(0, -1));
       setStreamingActions([]);
       setError(submitError instanceof Error ? submitError.message : "Build assist failed.");
     } finally {
@@ -112,7 +179,18 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
     void submitMessage(draft);
   };
 
-  const applyAction = (pending: BuildAssistPendingAction) => {
+  const updateTurnActions = (
+    turnIndex: number,
+    updater: (actions: BuildAssistPendingAction[]) => BuildAssistPendingAction[],
+  ) => {
+    setTurns((current) => current.map((turn, index) => (
+      index === turnIndex
+        ? { ...turn, actions: updater(turn.actions ?? []) }
+        : turn
+    )));
+  };
+
+  const applyAction = (turnIndex: number, pending: BuildAssistPendingAction) => {
     const selectedBuild = team.find((pokemon) => pokemon.id === selectedId) ?? null;
     const selectedData = POKEMON.find((pokemon) => pokemon.name === selectedBuild?.species) ?? null;
     const action = pending.action;
@@ -121,7 +199,7 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
       const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
       const addedId = pokemon ? onAddPokemon?.(pokemon.name, resolveAddPokemonChanges(action, pokemon)) ?? null : null;
       if (addedId) {
-        setActions((current) => current.map((entry) => (
+        updateTurnActions(turnIndex, (current) => current.map((entry) => (
           entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
         )));
       }
@@ -136,14 +214,14 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
       } else if (!onTeam) {
         const addedId = onAddPokemon?.(pokemon.name, resolveSetChanges(action, pokemon)) ?? null;
         if (addedId) {
-          setActions((current) => current.map((entry) => (
+          updateTurnActions(turnIndex, (current) => current.map((entry) => (
             entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
           )));
         }
-        setActions((current) => current.filter((entry) => entry.id !== pending.id));
+        updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id));
         return;
       }
-      setActions((current) => current.filter((entry) => entry.id !== pending.id));
+      updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id));
       return;
     }
     if (action.type === "set_item") onUpdateSelected?.({ item: action.item });
@@ -158,15 +236,16 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
       if (evs) onUpdateSelected?.({ evs });
     }
 
-    setActions((current) => current.filter((entry) => entry.id !== pending.id));
+    updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id));
   };
 
-  const applyAllAdds = () => {
-    const pendingAdds = actions.filter((entry) => entry.action.type === "add_pokemon" && !entry.appliedPokemonId);
+  const applyAllAdds = (turnIndex: number) => {
+    const turnActions = turns[turnIndex]?.actions ?? [];
+    const pendingAdds = turnActions.filter((entry) => entry.action.type === "add_pokemon" && !entry.appliedPokemonId);
     if (!pendingAdds.length) return;
 
     let slotsLeft = 6 - team.length;
-    const nextActions = [...actions];
+    const nextActions = [...turnActions];
 
     for (const pending of pendingAdds) {
       if (slotsLeft <= 0) break;
@@ -185,15 +264,25 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
       if (index >= 0) nextActions[index] = { ...nextActions[index], appliedPokemonId: addedId };
     }
 
-    setActions(nextActions);
+    updateTurnActions(turnIndex, () => nextActions);
   };
 
-  const pendingAddCount = actions.filter((entry) => entry.action.type === "add_pokemon" && !entry.appliedPokemonId).length;
-  const canApplyAllAdds = pendingAddCount > 1 && team.length < 6;
-  const visibleActions = loading ? streamingActions : actions;
+  const latestTurnIndex = turns.length - 1;
+  const latestTurnActions = loading
+    ? streamingActions
+    : turns[latestTurnIndex]?.actions ?? [];
+  const pendingAddCount = latestTurnActions.filter((entry) => entry.action.type === "add_pokemon" && !entry.appliedPokemonId).length;
+  const canApplyAllAdds = !loading && pendingAddCount > 1 && team.length < 6;
   const starterPrompts = team.length
     ? BUILD_ASSIST_STARTERS
-    : ["Build a team around a Pokémon", BUILD_ASSIST_VGC_STARTER, "What should my first pick be?"];
+    : ["Build a sun team around Torkoal", BUILD_ASSIST_VGC_STARTER, "What should my first pick be?"];
+
+  const handleClearChat = () => {
+    if (loading) return;
+    clearChat();
+    setError(null);
+    setStreamingActions([]);
+  };
 
   return (
     <div className={`build-assist-root ${isPanelMode ? "panel-mode" : "launcher-mode"}${open ? " open" : ""}`} aria-live="polite">
@@ -218,13 +307,28 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
               <strong>Team notes</strong>
               <p>{selectedName ? `Focused on ${selectedName}` : team.length ? `${team.length}/6 on team` : "Add a Pokémon to start"}</p>
             </div>
-            {!isPanelMode ? <button className="icon-button" type="button" onClick={() => setOpen(false)} aria-label="Close build assist">
-              <X size={16} />
-            </button> : null}
+            <div className="build-assist-head-actions">
+              {turns.length > 0 ? (
+                <button
+                  className="build-assist-clear"
+                  type="button"
+                  onClick={handleClearChat}
+                  disabled={loading}
+                  aria-label="Clear chat"
+                >
+                  Clear chat
+                </button>
+              ) : null}
+              {!isPanelMode ? (
+                <button className="icon-button" type="button" onClick={() => setOpen(false)} aria-label="Close build assist">
+                  <X size={16} />
+                </button>
+              ) : null}
+            </div>
           </header>
 
           <div className="build-assist-messages" ref={scrollRef}>
-            {messages.length === 0 ? (
+            {turns.length === 0 ? (
               <div className="build-assist-empty">
                 <p>Quick suggestions from the current roster.</p>
                 <div className="build-assist-starters">
@@ -237,44 +341,44 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
               </div>
             ) : (
               <>
-                {messages.map((message, index) => {
+                {turns.map((turn, turnIndex) => {
                   const isStreamingAssistant = loading
-                    && index === messages.length - 1
-                    && message.role === "assistant";
-
-                  const content = message.content
-                    || (isStreamingAssistant ? "Thinking…" : "");
-
-                  if (message.role === "assistant" && !content) return null;
+                    && turnIndex === turns.length - 1
+                    && turn.role === "assistant";
+                  const content = turn.content || (isStreamingAssistant ? "Thinking…" : "");
+                  const turnActions = isStreamingAssistant
+                    ? streamingActions
+                    : turn.actions ?? [];
 
                   return (
-                    <article
-                      key={`${message.role}-${index}`}
-                      className={`build-assist-message ${message.role}`}
-                    >
-                      <span>{message.role === "user" ? "You" : "Assist"}</span>
-                      {content ? <p>{content}</p> : null}
-                    </article>
+                    <Fragment key={`turn-${turnIndex}`}>
+                      {turn.role === "user" || content ? (
+                        <article className={`build-assist-message ${turn.role}`}>
+                          <span>{turn.role === "user" ? "You" : "Assist"}</span>
+                          {content ? <p>{content}</p> : null}
+                        </article>
+                      ) : null}
+                      {turnActions.map((pending) => (
+                        <BuildAssistActionCard
+                          key={pending.id}
+                          pending={pending}
+                          team={team}
+                          selectedId={selectedId}
+                          streaming={isStreamingAssistant && pending.id.startsWith("stream-")}
+                          onApply={() => applyAction(turnIndex, pending)}
+                          onRemove={pending.appliedPokemonId ? () => {
+                            onRemovePokemon?.(pending.appliedPokemonId!);
+                            updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id));
+                          } : undefined}
+                          onDismiss={() => updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id))}
+                        />
+                      ))}
+                    </Fragment>
                   );
                 })}
-                {visibleActions.map((pending) => (
-                  <BuildAssistActionCard
-                    key={pending.id}
-                    pending={pending}
-                    team={team}
-                    selectedId={selectedId}
-                    streaming={loading && pending.id.startsWith("stream-")}
-                    onApply={() => applyAction(pending)}
-                    onRemove={pending.appliedPokemonId ? () => {
-                      onRemovePokemon?.(pending.appliedPokemonId!);
-                      setActions((current) => current.filter((entry) => entry.id !== pending.id));
-                    } : undefined}
-                    onDismiss={() => setActions((current) => current.filter((entry) => entry.id !== pending.id))}
-                  />
-                ))}
                 {canApplyAllAdds ? (
                   <div className="build-assist-apply-all">
-                    <button type="button" onClick={applyAllAdds}>
+                    <button type="button" onClick={() => applyAllAdds(latestTurnIndex)}>
                       Apply all {pendingAddCount} Pokémon
                     </button>
                   </div>
@@ -310,12 +414,6 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
   );
 }
 
-type BuildAssistPendingAction = {
-  id: string;
-  action: BuildAssistAction;
-  appliedPokemonId?: string;
-};
-
 function BuildAssistActionCard({ pending, team, selectedId, streaming = false, onApply, onRemove, onDismiss }: {
   pending: BuildAssistPendingAction;
   team: PokemonBuild[];
@@ -332,6 +430,9 @@ function BuildAssistActionCard({ pending, team, selectedId, streaming = false, o
   const pokemon = setCardAction
     ? POKEMON.find((entry) => entry.name.toLowerCase() === setCardAction.pokemon.toLowerCase()) ?? null
     : null;
+  const megaForm = setCardAction?.megaForm
+    ? pokemon?.megaForms?.find((form) => form.name === setCardAction.megaForm) ?? null
+    : null;
   const isApplied = Boolean(pending.appliedPokemonId);
   const disabledReason = actionDisabledReason(action, team, selectedData, Boolean(selectedBuild), isApplied);
   const isSetCard = Boolean(setCardAction);
@@ -342,14 +443,14 @@ function BuildAssistActionCard({ pending, team, selectedId, streaming = false, o
         {isSetCard && setCardAction ? (
           <>
             <div className="build-assist-action-art">
-              {pokemon ? <img src={pokemon.sprite} alt="" /> : <Sparkles size={24} />}
+              {pokemon ? <img src={megaForm?.artwork ?? pokemon.sprite} alt="" /> : <Sparkles size={24} />}
               <div className="build-assist-action-title">
                 <small>{isApplied ? "Applied to team" : streaming ? "Building set…" : "Suggested change"}</small>
-                <strong>{actionLabel(action)}</strong>
+                <strong>{actionLabel(action, pokemon)}</strong>
               </div>
             </div>
             <div className="build-assist-action-body">
-              <SetPreview action={setCardAction} />
+              <SetPreview action={setCardAction} pokemon={pokemon} />
             </div>
           </>
         ) : (
@@ -397,8 +498,9 @@ function BuildAssistActionCard({ pending, team, selectedId, streaming = false, o
   );
 }
 
-function SetPreview({ action }: {
+function SetPreview({ action, pokemon }: {
   action: Extract<BuildAssistAction, { type: "add_pokemon" | "update_set" }>;
+  pokemon: typeof POKEMON[number] | null;
 }) {
   const rawEvs = action.evs ?? {};
   const evs: Record<StatKey, number> = sanitizeActionSpread(rawEvs)
@@ -406,11 +508,15 @@ function SetPreview({ action }: {
     ?? { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 };
   const moves = action.moves?.filter(Boolean).slice(0, 4) ?? [];
   const adjustedSpread = spreadWasAdjusted(action.evs);
+  const megaForm = action.megaForm
+    ? pokemon?.megaForms?.find((form) => form.name === action.megaForm) ?? null
+    : null;
+  const displayAbility = megaForm?.ability ?? action.ability;
 
   return (
     <div className="build-assist-set-preview">
       <dl className="build-assist-set-meta">
-        <div><dt>Ability</dt><dd>{action.ability || "—"}</dd></div>
+        <div><dt>Ability</dt><dd>{displayAbility || "—"}{megaForm ? " (Mega)" : ""}</dd></div>
         <div><dt>Item</dt><dd>{action.item || "—"}</dd></div>
         <div><dt>Nature</dt><dd>{action.nature || "—"}</dd></div>
       </dl>
@@ -433,9 +539,25 @@ function SetPreview({ action }: {
   );
 }
 
-function actionLabel(action: BuildAssistAction) {
-  if (action.type === "add_pokemon") return `Add ${action.pokemon}`;
-  if (action.type === "update_set") return `Apply set to ${action.pokemon}`;
+function actionLabel(action: BuildAssistAction, pokemon: typeof POKEMON[number] | null = null) {
+  if (action.type === "add_pokemon") {
+    const megaForm = action.megaForm
+      ? pokemon?.megaForms?.find((form) => form.name === action.megaForm)
+      : null;
+    const label = megaForm
+      ? formatMegaDisplayName(pokemon?.name ?? action.pokemon, megaForm.name)
+      : action.pokemon;
+    return `Add ${label}`;
+  }
+  if (action.type === "update_set") {
+    const megaForm = action.megaForm
+      ? pokemon?.megaForms?.find((form) => form.name === action.megaForm)
+      : null;
+    const label = megaForm
+      ? formatMegaDisplayName(pokemon?.name ?? action.pokemon, megaForm.name)
+      : action.pokemon;
+    return `Apply set to ${label}`;
+  }
   if (action.type === "apply_spread") return `Apply ${formatActionSpread(action.evs)}`;
   if (action.type === "set_item") return `Set item: ${action.item}`;
   if (action.type === "set_ability") return `Set ability: ${action.ability}`;

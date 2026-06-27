@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   buildBuildAssistSystemPrompt,
+  getBuildAssistMaxTokens,
   type BuildAssistMessage,
   type BuildAssistRequest,
 } from "../../../lib/build-assist";
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         temperature: 0.65,
-        max_tokens: 900,
+        max_tokens: getBuildAssistMaxTokens(sanitizedMessages, context),
         stream: true,
         messages: [
           { role: "system", content: buildBuildAssistSystemPrompt(context, sanitizedMessages) },

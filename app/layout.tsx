@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthSession } from "./components/AuthSession";
+import { NintendoAttribution } from "./components/NintendoAttribution";
 import { isAppPasswordEnabled } from "../lib/app-auth";
 import "./globals.css";
 
@@ -16,7 +17,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
   return (
     <html lang="en">
-      <body>{authEnabled ? <AuthSession>{children}</AuthSession> : children}</body>
+      <body>
+        {authEnabled ? <AuthSession>{children}</AuthSession> : children}
+        <NintendoAttribution />
+      </body>
     </html>
   );
 }

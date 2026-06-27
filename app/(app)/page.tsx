@@ -43,6 +43,7 @@ import {
 import { answerCoachQuestion, applyCoachRecommendation, baseCoachQuestion, CoachAnswer, CoachRecommendation, moveIsSpread } from "../../lib/coach";
 import { BuildAssistBubble } from "../components/BuildAssistBubble";
 import { PokeballMark } from "../components/PokeballMark";
+import { useBuildAssistSession, type BuildAssistSessionControls, buildTeamAssistKey, createDraftTeamSessionId, migrateAssistTeamKey, readDraftTeamSessionId, writeDraftTeamSessionId } from "../../lib/build-assist-session";
 import {
   CHAMPIONS_STAT_POINT_MAX,
   CHAMPIONS_STAT_POINT_TOTAL,
@@ -119,6 +120,7 @@ function buildFromSuggestion(data: PokemonData, changes?: Partial<PokemonBuild>)
     item: typeof changes?.item === "string" ? changes.item : base.item,
     ability: typeof changes?.ability === "string" ? changes.ability : base.ability,
     nature: typeof changes?.nature === "string" ? changes.nature : base.nature,
+    megaForm: typeof changes?.megaForm === "string" ? changes.megaForm : base.megaForm,
     moves: suggestedMoves.length ? [...suggestedMoves, "", "", "", ""].slice(0, 4) : base.moves,
     evs: suggestedEvs ?? base.evs,
   } satisfies PokemonBuild;
@@ -208,10 +210,41 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [savedTeams, setSavedTeams] = useState<SavedTeam[]>([]);
   const [savedTeamsReady, setSavedTeamsReady] = useState(false);
-  const [activeSavedTeamId, setActiveSavedTeamId] = useState<string | null>(null);
+  const [activeSavedTeamId, setActiveSavedTeamId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(ACTIVE_SAVED_TEAM_KEY);
+  });
   const [teamLibraryOpen, setTeamLibraryOpen] = useState(false);
   const [saveTeamOpen, setSaveTeamOpen] = useState(false);
   const [teamName, setTeamName] = useState("");
+  const [draftTeamSessionId, setDraftTeamSessionId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    if (localStorage.getItem(ACTIVE_SAVED_TEAM_KEY)) return null;
+    return readDraftTeamSessionId();
+  });
+  const teamAssistKey = useMemo(
+    () => buildTeamAssistKey(activeSavedTeamId, draftTeamSessionId),
+    [activeSavedTeamId, draftTeamSessionId],
+  );
+  const {
+    turns: assistTurns,
+    setTurns: setAssistTurns,
+    open: assistOpen,
+    setOpen: setAssistOpen,
+    draft: assistDraft,
+    setDraft: setAssistDraft,
+    clearChat: clearAssistChat,
+    resetForTeamKey: resetAssistForTeamKey,
+  } = useBuildAssistSession(teamAssistKey, savedTeamsReady);
+  const assistSession: BuildAssistSessionControls = {
+    turns: assistTurns,
+    setTurns: setAssistTurns,
+    open: assistOpen,
+    setOpen: setAssistOpen,
+    draft: assistDraft,
+    setDraft: setAssistDraft,
+    clearChat: clearAssistChat,
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -254,6 +287,35 @@ export default function Home() {
     if (activeSavedTeamId) localStorage.setItem(ACTIVE_SAVED_TEAM_KEY, activeSavedTeamId);
     else localStorage.removeItem(ACTIVE_SAVED_TEAM_KEY);
   }, [activeSavedTeamId, savedTeamsReady]);
+
+  useEffect(() => {
+    if (!savedTeamsReady) return;
+    if (activeSavedTeamId) {
+      if (draftTeamSessionId) setDraftTeamSessionId(null);
+      return;
+    }
+    let draftId = draftTeamSessionId ?? readDraftTeamSessionId();
+    if (team.length > 0 && !draftId) {
+      draftId = createDraftTeamSessionId();
+      migrateAssistTeamKey("empty", buildTeamAssistKey(null, draftId));
+      writeDraftTeamSessionId(draftId);
+    }
+    if (draftId !== draftTeamSessionId) setDraftTeamSessionId(draftId);
+  }, [activeSavedTeamId, draftTeamSessionId, savedTeamsReady, team.length]);
+
+  const closeBuildAssist = () => setAssistOpen(false);
+
+  const selectPokemon = (pokemonId: string) => {
+    closeBuildAssist();
+    if (selectedId !== pokemonId) setSelectedId(pokemonId);
+  };
+
+  const previousSelectedIdForAssistRef = useRef(selectedId);
+  useEffect(() => {
+    if (previousSelectedIdForAssistRef.current === selectedId) return;
+    previousSelectedIdForAssistRef.current = selectedId;
+    if (selectedId) setAssistOpen(false);
+  }, [selectedId, setAssistOpen]);
 
   const selected = team.find((pokemon) => pokemon.id === selectedId) ?? null;
   const selectedData = POKEMON.find((pokemon) => pokemon.name === selected?.species) ?? null;
@@ -316,9 +378,13 @@ export default function Home() {
   const applyImport = () => {
     const imported = importShowdown(transferText);
     if (imported.length) {
+      const nextDraftId = createDraftTeamSessionId();
+      writeDraftTeamSessionId(nextDraftId);
+      setDraftTeamSessionId(nextDraftId);
+      setActiveSavedTeamId(null);
+      resetAssistForTeamKey(buildTeamAssistKey(null, nextDraftId));
       setTeam(imported.slice(0, 6));
       setSelectedId(imported[0].id);
-      setActiveSavedTeamId(null);
       setTransferOpen(null);
     }
   };
@@ -340,6 +406,10 @@ export default function Home() {
       ));
     } else {
       const id = `team-${now}-${Math.random().toString(16).slice(2)}`;
+      const fromKey = buildTeamAssistKey(activeSavedTeamId, draftTeamSessionId);
+      migrateAssistTeamKey(fromKey, buildTeamAssistKey(id, null));
+      writeDraftTeamSessionId(null);
+      setDraftTeamSessionId(null);
       setSavedTeams((current) => [{ id, name, pokemon: snapshot, updatedAt: now }, ...current]);
       setActiveSavedTeamId(id);
     }
@@ -348,6 +418,8 @@ export default function Home() {
 
   const loadSavedTeam = (savedTeam: SavedTeam) => {
     const loaded = structuredClone(savedTeam.pokemon);
+    writeDraftTeamSessionId(null);
+    setDraftTeamSessionId(null);
     setTeam(loaded);
     setSelectedId(loaded[0]?.id ?? null);
     setActiveSavedTeamId(savedTeam.id);
@@ -355,9 +427,13 @@ export default function Home() {
   };
 
   const startNewTeam = () => {
+    const nextDraftId = createDraftTeamSessionId();
+    writeDraftTeamSessionId(nextDraftId);
+    setDraftTeamSessionId(nextDraftId);
     setTeam([]);
     setSelectedId(null);
     setActiveSavedTeamId(null);
+    resetAssistForTeamKey(buildTeamAssistKey(null, nextDraftId));
     setTeamLibraryOpen(false);
   };
 
@@ -415,7 +491,8 @@ export default function Home() {
                 <button
                   className={`team-card ${selectedId === pokemon.id ? "selected" : ""}`}
                   key={pokemon.id}
-                  onClick={() => setSelectedId(pokemon.id)}
+                  onPointerDown={closeBuildAssist}
+                  onClick={() => selectPokemon(pokemon.id)}
                 >
                   <PokemonArtImage data={data} megaForm={megaForm} variant="sprite" />
                   <span className="team-card-copy">
@@ -437,10 +514,11 @@ export default function Home() {
         <section className="editor-area">
           {!selected || !selectedData ? (
             <EmptyEditor
-              team={team}
               onStart={() => setPickerOpen(true)}
-              addPokemonByName={addPokemonByName}
-              removePokemonById={removePokemonById}
+              team={team}
+              assistSession={assistSession}
+              onAddPokemon={addPokemonByName}
+              onRemovePokemon={removePokemonById}
             />
           ) : (
             <PokemonEditor
@@ -448,10 +526,11 @@ export default function Home() {
               data={selectedData}
               team={team}
               selectedId={selectedId}
+              assistSession={assistSession}
               update={updateSelected}
               remove={removeSelected}
-              addPokemonByName={addPokemonByName}
-              removePokemonById={removePokemonById}
+              onAddPokemon={addPokemonByName}
+              onRemovePokemon={removePokemonById}
             />
           )}
         </section>
@@ -512,11 +591,12 @@ export default function Home() {
   );
 }
 
-function EmptyEditor({ team, onStart, addPokemonByName, removePokemonById }: {
-  team: PokemonBuild[];
+function EmptyEditor({ onStart, team, assistSession, onAddPokemon, onRemovePokemon }: {
   onStart: () => void;
-  addPokemonByName: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
-  removePokemonById: (pokemonId: string) => void;
+  team: PokemonBuild[];
+  assistSession: BuildAssistSessionControls;
+  onAddPokemon: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  onRemovePokemon: (pokemonId: string) => void;
 }) {
   return (
     <div className="empty-editor">
@@ -529,8 +609,9 @@ function EmptyEditor({ team, onStart, addPokemonByName, removePokemonById }: {
         <BuildAssistBubble
           team={team}
           selectedId={null}
-          onAddPokemon={addPokemonByName}
-          onRemovePokemon={removePokemonById}
+          session={assistSession}
+          onAddPokemon={onAddPokemon}
+          onRemovePokemon={onRemovePokemon}
         />
       </div>
     </div>
@@ -542,19 +623,21 @@ function PokemonEditor({
   data,
   team,
   selectedId,
+  assistSession,
   update,
   remove,
-  addPokemonByName,
-  removePokemonById,
+  onAddPokemon,
+  onRemovePokemon,
 }: {
   build: PokemonBuild;
   data: PokemonData;
   team: PokemonBuild[];
   selectedId: string | null;
+  assistSession: BuildAssistSessionControls;
   update: (changes: Partial<PokemonBuild>) => void;
   remove: () => void;
-  addPokemonByName: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
-  removePokemonById: (pokemonId: string) => void;
+  onAddPokemon: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  onRemovePokemon: (pokemonId: string) => void;
 }) {
   const [choice, setChoice] = useState<{ kind: "item" | "ability" | "move"; moveIndex?: number } | null>(null);
   const [natureOpen, setNatureOpen] = useState(false);
@@ -669,8 +752,9 @@ function PokemonEditor({
           <BuildAssistBubble
             team={team}
             selectedId={selectedId}
-            onAddPokemon={addPokemonByName}
-            onRemovePokemon={removePokemonById}
+            session={assistSession}
+            onAddPokemon={onAddPokemon}
+            onRemovePokemon={onRemovePokemon}
             onUpdateSelected={update}
           />
         </div>
