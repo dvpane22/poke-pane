@@ -202,6 +202,7 @@ function useEnterToSelectHovered<T>(select: (value: T) => void) {
 
 export default function Home() {
   const [team, setTeam] = useState<PokemonBuild[]>([]);
+  const teamRef = useRef<PokemonBuild[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
@@ -260,6 +261,7 @@ export default function Home() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(team));
+    teamRef.current = team;
   }, [team]);
 
   useEffect(() => {
@@ -334,11 +336,24 @@ export default function Home() {
     setQuery("");
   };
 
-  const addPokemonByName = (pokemonName: string, changes?: Partial<PokemonBuild>) => {
+  const addPokemonByName = (
+    pokemonName: string,
+    changes?: Partial<PokemonBuild>,
+    options?: { replacePokemonId?: string | null },
+  ) => {
     const data = POKEMON.find((pokemon) => pokemon.name.toLowerCase() === pokemonName.toLowerCase());
-    if (!data || team.length >= 6) return null;
+    if (!data) return null;
     const build = buildFromSuggestion(data, changes);
-    setTeam((current) => current.length >= 6 ? current : [...current, build]);
+    let roster = teamRef.current;
+    if (options?.replacePokemonId) {
+      roster = roster.filter((pokemon) => pokemon.id !== options.replacePokemonId);
+    }
+    if (roster.length >= 6) return null;
+    if (roster.some((pokemon) => pokemon.species.toLowerCase() === data.name.toLowerCase())) return null;
+
+    const nextTeam = [...roster, build];
+    teamRef.current = nextTeam;
+    setTeam(nextTeam);
     setSelectedId(build.id);
     setPickerOpen(false);
     setQuery("");
@@ -349,6 +364,12 @@ export default function Home() {
     if (!selectedId) return;
     setTeam((current) =>
       current.map((pokemon) => (pokemon.id === selectedId ? { ...pokemon, ...changes } : pokemon)),
+    );
+  };
+
+  const updatePokemonById = (pokemonId: string, changes: Partial<PokemonBuild>) => {
+    setTeam((current) =>
+      current.map((pokemon) => (pokemon.id === pokemonId ? { ...pokemon, ...changes } : pokemon)),
     );
   };
 
@@ -519,6 +540,7 @@ export default function Home() {
               assistSession={assistSession}
               onAddPokemon={addPokemonByName}
               onRemovePokemon={removePokemonById}
+              onSelectPokemon={selectPokemon}
             />
           ) : (
             <PokemonEditor
@@ -531,6 +553,8 @@ export default function Home() {
               remove={removeSelected}
               onAddPokemon={addPokemonByName}
               onRemovePokemon={removePokemonById}
+              onSelectPokemon={selectPokemon}
+              onUpdatePokemon={updatePokemonById}
             />
           )}
         </section>
@@ -591,12 +615,13 @@ export default function Home() {
   );
 }
 
-function EmptyEditor({ onStart, team, assistSession, onAddPokemon, onRemovePokemon }: {
+function EmptyEditor({ onStart, team, assistSession, onAddPokemon, onRemovePokemon, onSelectPokemon }: {
   onStart: () => void;
   team: PokemonBuild[];
   assistSession: BuildAssistSessionControls;
-  onAddPokemon: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  onAddPokemon: (pokemonName: string, changes?: Partial<PokemonBuild>, options?: { replacePokemonId?: string | null }) => string | null;
   onRemovePokemon: (pokemonId: string) => void;
+  onSelectPokemon: (pokemonId: string) => void;
 }) {
   return (
     <div className="empty-editor">
@@ -612,6 +637,7 @@ function EmptyEditor({ onStart, team, assistSession, onAddPokemon, onRemovePokem
           session={assistSession}
           onAddPokemon={onAddPokemon}
           onRemovePokemon={onRemovePokemon}
+          onSelectPokemon={onSelectPokemon}
         />
       </div>
     </div>
@@ -628,6 +654,8 @@ function PokemonEditor({
   remove,
   onAddPokemon,
   onRemovePokemon,
+  onSelectPokemon,
+  onUpdatePokemon,
 }: {
   build: PokemonBuild;
   data: PokemonData;
@@ -636,8 +664,10 @@ function PokemonEditor({
   assistSession: BuildAssistSessionControls;
   update: (changes: Partial<PokemonBuild>) => void;
   remove: () => void;
-  onAddPokemon: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  onAddPokemon: (pokemonName: string, changes?: Partial<PokemonBuild>, options?: { replacePokemonId?: string | null }) => string | null;
   onRemovePokemon: (pokemonId: string) => void;
+  onSelectPokemon: (pokemonId: string) => void;
+  onUpdatePokemon: (pokemonId: string, changes: Partial<PokemonBuild>) => void;
 }) {
   const [choice, setChoice] = useState<{ kind: "item" | "ability" | "move"; moveIndex?: number } | null>(null);
   const [natureOpen, setNatureOpen] = useState(false);
@@ -756,6 +786,8 @@ function PokemonEditor({
             onAddPokemon={onAddPokemon}
             onRemovePokemon={onRemovePokemon}
             onUpdateSelected={update}
+            onSelectPokemon={onSelectPokemon}
+            onUpdatePokemon={onUpdatePokemon}
           />
         </div>
       </div>

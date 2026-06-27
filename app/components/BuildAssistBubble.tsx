@@ -9,6 +9,7 @@ import {
   type BuildAssistMessage,
   buildAssistContext,
   formatActionSpread,
+  findTeamReplacementTarget,
   mergeBuildAssistActions,
   normalizeActionSpread,
   parseBuildAssistStream,
@@ -62,14 +63,22 @@ export function BuildAssistBubble({
   onAddPokemon,
   onRemovePokemon,
   onUpdateSelected,
+  onSelectPokemon,
+  onUpdatePokemon,
 }: {
   team: PokemonBuild[];
   selectedId: string | null;
   mode?: "launcher" | "panel";
   session: BuildAssistSessionControls;
-  onAddPokemon?: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  onAddPokemon?: (
+    pokemonName: string,
+    changes?: Partial<PokemonBuild>,
+    options?: { replacePokemonId?: string | null },
+  ) => string | null;
   onRemovePokemon?: (pokemonId: string) => void;
   onUpdateSelected?: (changes: Partial<PokemonBuild>) => void;
+  onSelectPokemon?: (pokemonId: string) => void;
+  onUpdatePokemon?: (pokemonId: string, changes: Partial<PokemonBuild>) => void;
 }) {
   const isPanelMode = mode === "panel";
   const { turns, setTurns, open, setOpen, draft, setDraft, clearChat } = session;
@@ -77,8 +86,24 @@ export function BuildAssistBubble({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollPinnedRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const streamReplyRef = useRef("");
+
+  const scrollToBottom = (force = false) => {
+    const node = scrollRef.current;
+    if (!node) return;
+    if (force || scrollPinnedRef.current) {
+      node.scrollTop = node.scrollHeight;
+    }
+  };
+
+  const handleMessagesScroll = () => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
+    scrollPinnedRef.current = distanceFromBottom < 64;
+  };
 
   const context = useMemo(
     () => buildAssistContext(team, selectedId, { priorSuggestedSpecies: collectPriorSuggestedSpecies(turns) }),
@@ -88,14 +113,14 @@ export function BuildAssistBubble({
 
   useEffect(() => {
     if (!open) return;
+    scrollPinnedRef.current = true;
+    scrollToBottom(true);
     inputRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
-    const node = scrollRef.current;
-    if (!node) return;
-    node.scrollTop = node.scrollHeight;
-  }, [turns, loading, open, streamingActions]);
+    scrollToBottom();
+  }, [turns, loading, streamingActions]);
 
   const updateStreamingState = (rawReply: string, mergeBeforeIndex: number) => {
     const mergeOptions = buildMergeOptions(team, turns, mergeBeforeIndex);
@@ -134,6 +159,8 @@ export function BuildAssistBubble({
     setError(null);
     setStreamingActions([]);
     streamReplyRef.current = "";
+    scrollPinnedRef.current = true;
+    scrollToBottom(true);
     setLoading(true);
 
     try {
@@ -197,8 +224,22 @@ export function BuildAssistBubble({
 
     if (action.type === "add_pokemon") {
       const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
-      const addedId = pokemon ? onAddPokemon?.(pokemon.name, resolveAddPokemonChanges(action, pokemon)) ?? null : null;
+      if (!pokemon) return;
+
+      const conversationText = turns.slice(0, turnIndex + 1).map((turn) => turn.content).filter(Boolean).join("\n");
+      const replaceSpecies = action.replaces
+        ?? findTeamReplacementTarget(conversationText, team, action.pokemon);
+      const replaceTarget = replaceSpecies
+        ? team.find((entry) => entry.species.toLowerCase() === replaceSpecies.toLowerCase()) ?? null
+        : null;
+
+      const addedId = onAddPokemon?.(
+        pokemon.name,
+        resolveAddPokemonChanges(action, pokemon),
+        { replacePokemonId: replaceTarget?.id ?? null },
+      ) ?? null;
       if (addedId) {
+        onSelectPokemon?.(addedId);
         updateTurnActions(turnIndex, (current) => current.map((entry) => (
           entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
         )));
@@ -208,20 +249,21 @@ export function BuildAssistBubble({
     if (action.type === "update_set") {
       const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
       if (!pokemon) return;
-      const onTeam = team.some((entry) => entry.species.toLowerCase() === action.pokemon.toLowerCase());
-      if (onTeam && selectedBuild?.species.toLowerCase() === action.pokemon.toLowerCase()) {
-        onUpdateSelected?.(resolveSetChanges(action, pokemon));
-      } else if (!onTeam) {
-        const addedId = onAddPokemon?.(pokemon.name, resolveSetChanges(action, pokemon)) ?? null;
-        if (addedId) {
-          updateTurnActions(turnIndex, (current) => current.map((entry) => (
-            entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
-          )));
-        }
+      const teamMember = team.find((entry) => entry.species.toLowerCase() === action.pokemon.toLowerCase()) ?? null;
+      if (teamMember) {
+        onUpdatePokemon?.(teamMember.id, resolveSetChanges(action, pokemon));
+        onSelectPokemon?.(teamMember.id);
         updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id));
         return;
       }
-      updateTurnActions(turnIndex, (current) => current.filter((entry) => entry.id !== pending.id));
+
+      const addedId = onAddPokemon?.(pokemon.name, resolveSetChanges(action, pokemon)) ?? null;
+      if (addedId) {
+        onSelectPokemon?.(addedId);
+        updateTurnActions(turnIndex, (current) => current.map((entry) => (
+          entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
+        )));
+      }
       return;
     }
     if (action.type === "set_item") onUpdateSelected?.({ item: action.item });
@@ -244,8 +286,10 @@ export function BuildAssistBubble({
     const pendingAdds = turnActions.filter((entry) => entry.action.type === "add_pokemon" && !entry.appliedPokemonId);
     if (!pendingAdds.length) return;
 
+    const conversationText = turns.slice(0, turnIndex + 1).map((turn) => turn.content).filter(Boolean).join("\n");
     let slotsLeft = 6 - team.length;
     const nextActions = [...turnActions];
+    let lastAddedId: string | null = null;
 
     for (const pending of pendingAdds) {
       if (slotsLeft <= 0) break;
@@ -254,17 +298,29 @@ export function BuildAssistBubble({
 
       const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === addAction.pokemon.toLowerCase());
       if (!pokemon) continue;
-      if (actionDisabledReason(addAction, team, null, false)) continue;
+      if (actionDisabledReason(addAction, team, null, false, false, conversationText)) continue;
 
-      const addedId = onAddPokemon?.(pokemon.name, resolveAddPokemonChanges(addAction, pokemon)) ?? null;
+      const replaceSpecies = addAction.replaces
+        ?? findTeamReplacementTarget(conversationText, team, addAction.pokemon);
+      const replaceTarget = replaceSpecies
+        ? team.find((entry) => entry.species.toLowerCase() === replaceSpecies.toLowerCase()) ?? null
+        : null;
+
+      const addedId = onAddPokemon?.(
+        pokemon.name,
+        resolveAddPokemonChanges(addAction, pokemon),
+        { replacePokemonId: replaceTarget?.id ?? null },
+      ) ?? null;
       if (!addedId) continue;
 
+      lastAddedId = addedId;
       slotsLeft -= 1;
       const index = nextActions.findIndex((entry) => entry.id === pending.id);
       if (index >= 0) nextActions[index] = { ...nextActions[index], appliedPokemonId: addedId };
     }
 
     updateTurnActions(turnIndex, () => nextActions);
+    if (lastAddedId) onSelectPokemon?.(lastAddedId);
   };
 
   const latestTurnIndex = turns.length - 1;
@@ -327,7 +383,7 @@ export function BuildAssistBubble({
             </div>
           </header>
 
-          <div className="build-assist-messages" ref={scrollRef}>
+          <div className="build-assist-messages" ref={scrollRef} onScroll={handleMessagesScroll}>
             {turns.length === 0 ? (
               <div className="build-assist-empty">
                 <p>Quick suggestions from the current roster.</p>
@@ -364,6 +420,7 @@ export function BuildAssistBubble({
                           pending={pending}
                           team={team}
                           selectedId={selectedId}
+                          conversationText={turns.slice(0, turnIndex + 1).map((entry) => entry.content).filter(Boolean).join("\n")}
                           streaming={isStreamingAssistant && pending.id.startsWith("stream-")}
                           onApply={() => applyAction(turnIndex, pending)}
                           onRemove={pending.appliedPokemonId ? () => {
@@ -414,10 +471,11 @@ export function BuildAssistBubble({
   );
 }
 
-function BuildAssistActionCard({ pending, team, selectedId, streaming = false, onApply, onRemove, onDismiss }: {
+function BuildAssistActionCard({ pending, team, selectedId, conversationText = "", streaming = false, onApply, onRemove, onDismiss }: {
   pending: BuildAssistPendingAction;
   team: PokemonBuild[];
   selectedId: string | null;
+  conversationText?: string;
   streaming?: boolean;
   onApply: () => void;
   onRemove?: () => void;
@@ -434,7 +492,7 @@ function BuildAssistActionCard({ pending, team, selectedId, streaming = false, o
     ? pokemon?.megaForms?.find((form) => form.name === setCardAction.megaForm) ?? null
     : null;
   const isApplied = Boolean(pending.appliedPokemonId);
-  const disabledReason = actionDisabledReason(action, team, selectedData, Boolean(selectedBuild), isApplied);
+  const disabledReason = actionDisabledReason(action, team, selectedData, Boolean(selectedBuild), isApplied, conversationText);
   const isSetCard = Boolean(setCardAction);
 
   return (
@@ -547,6 +605,7 @@ function actionLabel(action: BuildAssistAction, pokemon: typeof POKEMON[number] 
     const label = megaForm
       ? formatMegaDisplayName(pokemon?.name ?? action.pokemon, megaForm.name)
       : action.pokemon;
+    if (action.replaces?.trim()) return `Replace ${action.replaces} with ${label}`;
     return `Add ${label}`;
   }
   if (action.type === "update_set") {
@@ -571,10 +630,18 @@ function actionDisabledReason(
   selectedData: typeof POKEMON[number] | null,
   hasSelected: boolean,
   isApplied = false,
+  conversationText = "",
 ) {
   if (isApplied) return "";
   if (action.type === "add_pokemon") {
-    if (team.length >= 6) return "Team is already full.";
+    const replaceSpecies = action.replaces
+      ?? findTeamReplacementTarget(conversationText, team, action.pokemon);
+    const canReplace = Boolean(
+      team.length >= 6
+      && replaceSpecies
+      && team.some((entry) => entry.species.toLowerCase() === replaceSpecies.toLowerCase()),
+    );
+    if (team.length >= 6 && !canReplace) return "Team is already full.";
     const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
     if (!pokemon) return "That Pokémon is not in this catalog.";
     if (action.evs && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
@@ -585,13 +652,15 @@ function actionDisabledReason(
     if (!pokemon) return "That Pokémon is not in this catalog.";
     const onTeam = team.some((entry) => entry.species.toLowerCase() === action.pokemon.toLowerCase());
     if (!onTeam) {
-      if (team.length >= 6) return "Team is already full.";
+      const replaceSpecies = findTeamReplacementTarget(conversationText, team, action.pokemon);
+      const canReplace = Boolean(
+        team.length >= 6
+        && replaceSpecies
+        && team.some((entry) => entry.species.toLowerCase() === replaceSpecies.toLowerCase()),
+      );
+      if (team.length >= 6 && !canReplace) return "Team is already full.";
       if (action.evs && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
       return "";
-    }
-    if (!hasSelected) return "Select a Pokémon first.";
-    if (!selectedData || selectedData.name.toLowerCase() !== action.pokemon.toLowerCase()) {
-      return `Select ${action.pokemon} first.`;
     }
     if (action.evs && !sanitizeActionSpread(action.evs)) return "Spread could not be parsed.";
     return "";

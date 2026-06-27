@@ -35,6 +35,53 @@ export type BuildAssistContextOptions = {
 };
 
 const WEATHER_SETTER_ABILITIES = new Set(["Drizzle", "Drought", "Snow Warning", "Sand Stream"]);
+const WEATHER_EXTENSION_ROCKS = new Set(["Damp Rock", "Heat Rock", "Smooth Rock", "Icy Rock"]);
+
+function weatherExtensionRockForAbility(ability: string) {
+  if (ability === "Drought") return "Heat Rock";
+  if (ability === "Drizzle") return "Damp Rock";
+  if (ability === "Sand Stream") return "Smooth Rock";
+  if (ability === "Snow Warning") return "Icy Rock";
+  return undefined;
+}
+
+function activeWeatherAbility(suggestion: BuildAssistSetSuggestion, pokemon: PokemonData) {
+  const ability = suggestion.ability?.trim();
+  if (ability && WEATHER_SETTER_ABILITIES.has(ability)) return ability;
+  return pokemon.abilities.find((entry) => WEATHER_SETTER_ABILITIES.has(entry));
+}
+
+function isMismatchedWeatherRock(pokemon: PokemonData, suggestion: BuildAssistSetSuggestion, item: string) {
+  if (!WEATHER_EXTENSION_ROCKS.has(item)) return false;
+  const ability = activeWeatherAbility(suggestion, pokemon);
+  if (!ability) return false;
+  const expected = weatherExtensionRockForAbility(ability);
+  return Boolean(expected && item !== expected);
+}
+
+function preferredWeatherExtensionRock(pokemon: PokemonData, suggestion: BuildAssistSetSuggestion) {
+  const ability = activeWeatherAbility(suggestion, pokemon);
+  if (!ability) return undefined;
+  const rock = weatherExtensionRockForAbility(ability);
+  if (rock && pokemon.items.includes(rock)) return rock;
+  return undefined;
+}
+
+function resolveSetItem(
+  pokemon: PokemonData,
+  suggestion: BuildAssistSetSuggestion,
+  usedItems = new Set<string>(),
+) {
+  const weatherRock = preferredWeatherExtensionRock(pokemon, suggestion);
+  const item = suggestion.item?.trim();
+  if (item && pokemon.items.includes(item) && !isMismatchedWeatherRock(pokemon, suggestion, item)) {
+    return item;
+  }
+  if (weatherRock && (!item || isMismatchedWeatherRock(pokemon, suggestion, item))) {
+    return weatherRock;
+  }
+  return pickUniqueItemForPokemon(pokemon, suggestion, usedItems) ?? "";
+}
 const TRICK_ROOM_MOVES = new Set(["Trick Room"]);
 const SPEED_CONTROL_MOVES = new Set(["Tailwind", "Icy Wind", "Electroweb", "Bleakwind Storm"]);
 
@@ -140,6 +187,7 @@ export type BuildAssistResponse = {
 export type BuildAssistSetSuggestion = {
   pokemon: string;
   reason?: string;
+  replaces?: string;
   megaForm?: string;
   item?: string;
   ability?: string;
@@ -419,7 +467,7 @@ function isLegalCatalogSet(suggestion: BuildAssistSetSuggestion) {
   if (!suggestion.nature?.trim()) return false;
   const moves = suggestion.moves?.filter(Boolean) ?? [];
   if (moves.length < 4 || !moves.every((move) => pokemon.moves.includes(move))) return false;
-  return Boolean(sanitizeActionSpread(suggestion.evs ?? {}));
+  return Boolean(finalizeActionSpread(suggestion.evs ?? {}, suggestion.nature));
 }
 
 function catalogThemeCandidates(theme: "rain" | "sun" | "trick room") {
@@ -488,6 +536,76 @@ function isFullTeamIntent(text: string, teamSize = 0) {
     || (teamSize === 0 && /\bteam\b/.test(latest) && /\b(?:rain|sun|trick room|full|complete|build)\b/.test(latest));
 }
 
+function isFinishSetIntent(text: string) {
+  const latest = text.toLowerCase();
+  return /\b(?:finish|complete|fill(?:\s+out)?|max(?:\s+out)?|tighten)\b[\s\S]{0,40}\b(?:set|spread|stats?|evs?|stat points?)\b/.test(latest)
+    || /\b(?:set|spread|stats?|evs?|stat points?)\b[\s\S]{0,40}\b(?:finish|complete|fill|max(?:\s+out)?|tighten)\b/.test(latest);
+}
+
+export function isReplaceTeamMemberIntent(text: string) {
+  const latest = text.toLowerCase();
+  return /\b(?:remove|drop|replace|swap(?:\s+out)?|cut|switch(?:\s+out)?)\b/.test(latest)
+    && /\b(?:someone else|something else|different|another|instead|new)\b/.test(latest)
+    || /\breplace\s+\w+\s+with\b/.test(latest)
+    || /\b(?:remove|drop)\s+\w+[\s\S]{0,40}\b(?:suggest|recommend|add|try)\b/.test(latest);
+}
+
+export function findTeamReplacementTarget(
+  conversationText: string,
+  team: PokemonBuild[],
+  newSpecies: string,
+): string | null {
+  const newKey = newSpecies.trim().toLowerCase();
+  if (!newKey) return null;
+
+  for (const build of team) {
+    const species = build.species;
+    if (species.toLowerCase() === newKey) continue;
+    const pattern = new RegExp(
+      `\\b(?:remove|drop|replace|swap(?:\\s+out)?|cut|switch(?:\\s+out)?)\\s+(?:the\\s+)?${escapeRegExp(species)}\\b`,
+      "i",
+    );
+    if (pattern.test(conversationText)) return species;
+  }
+
+  const withMatch = conversationText.match(
+    /\breplace\s+([A-Za-z][A-Za-z\-']+?)\s+with\s+([A-Za-z][A-Za-z\-']+)/i,
+  );
+  if (withMatch?.[1] && withMatch[2]?.toLowerCase() === newKey) {
+    const target = team.find((build) => build.species.toLowerCase() === withMatch[1].toLowerCase());
+    if (target) return target.species;
+  }
+
+  return null;
+}
+
+function hasPartialSetContent(suggestion: BuildAssistSetSuggestion) {
+  return Boolean(
+    suggestion.ability?.trim()
+    || suggestion.item?.trim()
+    || suggestion.nature?.trim()
+    || (suggestion.moves?.filter(Boolean).length ?? 0) > 0
+    || suggestion.evs,
+  );
+}
+
+function legalMovesForPokemon(pokemon: PokemonData, moves: string[]) {
+  const legal = moves
+    .map((move) => matchCatalogMove(move, pokemon.moves))
+    .filter((move): move is string => Boolean(move && pokemon.moves.includes(move)));
+  return [...new Set(legal)];
+}
+
+function attachReplacementTarget(
+  action: Extract<BuildAssistAction, { type: "add_pokemon" }>,
+  team: PokemonBuild[],
+  conversationText: string,
+): Extract<BuildAssistAction, { type: "add_pokemon" }> {
+  if (action.replaces?.trim()) return action;
+  const replaces = findTeamReplacementTarget(conversationText, team, action.pokemon);
+  return replaces ? { ...action, replaces } : action;
+}
+
 export function getBuildAssistMaxTokens(messages: BuildAssistMessage[], context: BuildAssistContext) {
   return isFullTeamRequest(messages, context) ? 3600 : 900;
 }
@@ -517,6 +635,10 @@ function defaultEvsForSet(suggestion: BuildAssistSetSuggestion) {
 
 function preferredAbilityForContext(pokemon: PokemonData, contextText: string) {
   const text = contextText.toLowerCase();
+  if (text.includes("sun") && pokemon.abilities.includes("Drought")) return "Drought";
+  if (text.includes("rain") && pokemon.abilities.includes("Drizzle")) return "Drizzle";
+  if (text.includes("sand") && pokemon.abilities.includes("Sand Stream")) return "Sand Stream";
+  if (text.includes("snow") && pokemon.abilities.includes("Snow Warning")) return "Snow Warning";
   if (text.includes("sun") && pokemon.abilities.includes("Chlorophyll")) return "Chlorophyll";
   if (text.includes("rain") && pokemon.abilities.includes("Swift Swim")) return "Swift Swim";
   if (text.includes("sand") && pokemon.abilities.includes("Sand Rush")) return "Sand Rush";
@@ -543,8 +665,12 @@ function pickUniqueItemForPokemon(
     const stone = form ? megaStoneForForm(pokemon, form) : undefined;
     if (stone) candidates.push(stone);
   }
+  const weatherRock = preferredWeatherExtensionRock(pokemon, suggestion);
+  if (weatherRock) candidates.unshift(weatherRock);
   if (suggestion.item && pokemon.items.includes(suggestion.item)) {
-    candidates.unshift(suggestion.item);
+    if (!isMismatchedWeatherRock(pokemon, suggestion, suggestion.item)) {
+      candidates.unshift(suggestion.item);
+    }
   }
   for (const item of BUILDER_ITEM_PRIORITY) {
     if (pokemon.items.includes(item)) candidates.push(item);
@@ -569,10 +695,40 @@ function applyItemClauseToAdd(
   const pokemon = findCatalogPokemon(action.pokemon);
   if (!pokemon) return action;
 
-  const item = action.item?.trim();
+  let item = action.item?.trim();
+  if (item && isMismatchedWeatherRock(pokemon, action, item)) {
+    const rock = preferredWeatherExtensionRock(pokemon, action);
+    if (rock) item = rock;
+  }
   if (item && !usedItems.has(item)) {
     usedItems.add(item);
-    return action;
+    return { ...action, item };
+  }
+
+  const replacement = pickUniqueItemForPokemon(pokemon, action, usedItems);
+  if (replacement) {
+    usedItems.add(replacement);
+    return { ...action, item: replacement };
+  }
+
+  return action;
+}
+
+function applyItemClauseToUpdate(
+  action: Extract<BuildAssistAction, { type: "update_set" }>,
+  usedItems: Set<string>,
+): Extract<BuildAssistAction, { type: "update_set" }> {
+  const pokemon = findCatalogPokemon(action.pokemon);
+  if (!pokemon) return action;
+
+  let item = action.item?.trim();
+  if (item && isMismatchedWeatherRock(pokemon, action, item)) {
+    const rock = preferredWeatherExtensionRock(pokemon, action);
+    if (rock) item = rock;
+  }
+  if (item && !usedItems.has(item)) {
+    usedItems.add(item);
+    return { ...action, item };
   }
 
   const replacement = pickUniqueItemForPokemon(pokemon, action, usedItems);
@@ -586,9 +742,11 @@ function applyItemClauseToAdd(
 
 function enforceItemClauseOnActions(actions: BuildAssistAction[], team: PokemonBuild[]) {
   const usedItems = teamUsedItems(team);
-  return actions.map((action) => (
-    action.type === "add_pokemon" ? applyItemClauseToAdd(action, usedItems) : action
-  ));
+  return actions.map((action) => {
+    if (action.type === "add_pokemon") return applyItemClauseToAdd(action, usedItems);
+    if (action.type === "update_set") return applyItemClauseToUpdate(action, usedItems);
+    return action;
+  });
 }
 
 function preferredNatureForPokemon(pokemon: PokemonData) {
@@ -622,17 +780,16 @@ function fillMissingCatalogSetFields(
   const ability = withMega.ability && legalAbilitiesForSet(pokemon, withMega.megaForm).includes(withMega.ability)
     ? withMega.ability
     : preferredAbilityForContext(pokemon, contextText);
-  const item = withMega.item && pokemon.items.includes(withMega.item)
-    ? withMega.item
-    : preferredItemForSet(pokemon, withMega);
+  const setSuggestion = { ...withMega, ability };
+  const item = resolveSetItem(pokemon, setSuggestion);
   const explicitMoves = withMega.moves?.filter(Boolean) ?? [];
-  const moves = explicitMoves.length >= 4
-    ? explicitMoves.slice(0, 4)
-    : preferredMovesForPokemon(pokemon);
-  const evs = sanitizeActionSpread(withMega.evs ?? {})
+  const legalExplicit = legalMovesForPokemon(pokemon, explicitMoves);
+  const moves = legalExplicit.length >= 4
+    ? legalExplicit.slice(0, 4)
+    : [...legalExplicit, ...preferredMovesForPokemon(pokemon).filter((move) => !legalExplicit.includes(move))].slice(0, 4);
+  const evs = finalizeActionSpread(withMega.evs, nature, { fillToTotal: true })
     ?? defaultEvsForSet({ ...withMega, nature })
-    ?? sanitizeActionSpread({ HP: 32, SpA: 32, Spe: 2 })
-    ?? undefined;
+    ?? finalizeActionSpread(undefined, nature, { fillToTotal: true });
 
   return {
     ...withMega,
@@ -660,19 +817,14 @@ function finalizeAddPokemonAction(
     ...applyMegaIntent(enriched, `${conversationText}\n${reply}`),
     pokemon: enriched.pokemon,
   };
-  const section = bestSectionForPokemon(reply, result.pokemon, allMentionNames);
-  if (!sanitizeActionSpread(result.evs ?? {})) {
-    const parsedEvs = parseEvsFromText(section);
-    if (parsedEvs) {
-      result = { ...result, evs: sanitizeActionSpread(parsedEvs) ?? normalizeActionSpread(parsedEvs) ?? result.evs };
-    }
-  }
-  if (!sanitizeActionSpread(result.evs ?? {})) {
-    const fallbackEvs = defaultEvsForSet(result);
-    if (fallbackEvs) result = { ...result, evs: fallbackEvs };
-  }
 
-  if (requireComplete && !isCompleteSetSuggestion(result) && fillMissingSets) {
+  result = {
+    type: "add_pokemon",
+    ...finalizeSetActionFields(result, reply, allMentionNames, conversationText, fillMissingSets || requireComplete),
+    pokemon: result.pokemon,
+  };
+
+  if (requireComplete && !isCompleteSetSuggestion(result) && (fillMissingSets || hasPartialSetContent(result))) {
     result = {
       type: "add_pokemon",
       ...fillMissingCatalogSetFields(result, `${conversationText}\n${reply}`),
@@ -731,6 +883,8 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "Avoid markdown headings, tables, bold labels, and long templates unless the user explicitly asks.",
     "Mention only the key tradeoff when relevant.",
     "Assume level 50 with 32 Stat Points max per stat and 66 total per Pokémon.",
+    "Champions stat points are NOT Showdown EVs — never use 252/252/4. Use 0–32 per stat with exactly 66 total (example: {\"HP\":32,\"SpA\":32,\"Spe\":2}).",
+    "When finishing, tightening, or completing a set, always include evs in update_set that sum to exactly 66.",
     "VGC item clause: every held item on a team must be unique — never assign the same item to two Pokémon across the current roster and your add_pokemon actions in one answer.",
     "When suggesting a full team or multiple Pokémon, give each a different legal held item (vary Life Orb, Focus Sash, Sitrus Berry, Leftovers, Choice items, etc.).",
     "Only suggest Pokémon from the Regulation MB roster below. Never invent Pokémon, moves, abilities, or items.",
@@ -744,6 +898,7 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "Never suggest a Pokémon already on the team or listed under excluded species.",
     "Never repeat a Pokémon you already suggested earlier in this chat unless the user explicitly asks to revisit that species.",
     "If the team already has a weather setter (Drizzle, Drought, Snow Warning, or Sand Stream), do not suggest another weather setter — suggest partners that benefit from that weather instead.",
+    "Weather extension items must match the setter ability: Drought → Heat Rock, Drizzle → Damp Rock, Sand Stream → Smooth Rock, Snow Warning → Icy Rock. Never give Damp Rock to a Drought Pokémon.",
     "Do not stack redundant roles (two Intimidate users, two Trick Room setters, two Tailwind users) unless the user asks for a specific strategy.",
     "When rain is active, favor Swift Swim users and rain-boosted moves from the catalog — never a second Drizzle setter.",
     "Pane Build Assist is an education tool — teach VGC and doubles fundamentals here. Never tell users to go read external guides, watch videos elsewhere, or learn on their own when they ask to learn.",
@@ -764,6 +919,8 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "When your answer includes a concrete change the app could apply, append one hidden action block at the very end.",
     "If you suggest adding a specific Pokémon, always include an add_pokemon action for that Pokémon with ability, item, nature, moves, and evs when you mention them.",
     "If you suggest multiple new Pokémon in one answer, include one add_pokemon action per Pokémon in the same PANE_ACTIONS block.",
+    "When the user asks to remove, replace, or swap a team member, include add_pokemon for the replacement with a full starter set and set replaces to the species being removed. Do not ask the user to confirm in chat — the apply card is the confirmation step.",
+    "Never end a replacement suggestion with a question like \"Would you like me to add X?\" — include the add_pokemon action immediately.",
     "Visible prose and hidden action payloads must match — do not describe spreads in text without putting them in the action.",
     "If the user asks you to add or apply something, do not claim it is done. Provide the action for approval.",
     "The hidden block format is exactly: [[PANE_ACTIONS:{\"actions\":[...]}]]",
@@ -1061,6 +1218,7 @@ function readSetAction(
     type,
     pokemon: species,
     reason,
+    replaces: typeof candidate.replaces === "string" ? candidate.replaces : undefined,
     megaForm: typeof candidate.megaForm === "string" ? candidate.megaForm : undefined,
     item: typeof candidate.item === "string" ? candidate.item : undefined,
     ability: typeof candidate.ability === "string" ? candidate.ability : undefined,
@@ -1180,16 +1338,43 @@ function parseEvsFromText(text: string): Partial<Record<StatKey, number>> | unde
   const labeled = readLabeledValue(text, ["EVs", "Stat Points", "Stats", "Spread"]);
   const source = labeled ?? text;
 
-  for (const match of source.matchAll(/\b(\d{1,2})\s*(HP|Atk|Def|SpA|SpD|Spe|Sp\.?\s*A|Sp\.?\s*D|Speed|Attack|Defense)\b/gi)) {
+  for (const match of source.matchAll(/\b(\d{1,3})\s*(HP|Atk|Def|SpA|SpD|Spe|Sp\.?\s*A|Sp\.?\s*D|Speed|Attack|Defense)\b/gi)) {
     const stat = normalizeStatToken(match[2]);
     if (stat) evs[stat] = Number(match[1]);
   }
-  for (const match of source.matchAll(/\b(HP|Atk|Def|SpA|SpD|Spe)\s*[:=]?\s*(\d{1,2})\b/gi)) {
+  for (const match of source.matchAll(/\b(HP|Atk|Def|SpA|SpD|Spe)\s*[:=]?\s*(\d{1,3})\b/gi)) {
     const stat = normalizeStatToken(match[1]);
     if (stat) evs[stat] = Number(match[2]);
   }
 
   return Object.keys(evs).length ? evs : undefined;
+}
+
+function finalizeSetActionFields(
+  suggestion: BuildAssistSetSuggestion,
+  reply: string,
+  allMentionNames: string[],
+  conversationText: string,
+  fillMissing: boolean,
+): BuildAssistSetSuggestion {
+  const section = bestSectionForPokemon(reply, suggestion.pokemon, allMentionNames);
+  const fillToTotal = fillMissing || isFinishSetIntent(conversationText);
+  let result = { ...suggestion };
+
+  if (!finalizeActionSpread(result.evs, result.nature)) {
+    const parsedEvs = parseEvsFromText(section);
+    const parsed = parsedEvs ? finalizeActionSpread(parsedEvs, result.nature, { fillToTotal }) : undefined;
+    if (parsed) result = { ...result, evs: parsed };
+  }
+
+  const finalizedEvs = finalizeActionSpread(result.evs, result.nature, { fillToTotal });
+  if (finalizedEvs) result = { ...result, evs: finalizedEvs };
+
+  if (fillMissing && !isLegalCatalogSet(result)) {
+    result = fillMissingCatalogSetFields(result, `${conversationText}\n${reply}`);
+  }
+
+  return result;
 }
 
 function scorePokemonSection(section: string) {
@@ -1288,7 +1473,8 @@ function parseMovesFromText(text: string, pokemon?: typeof POKEMON[number]): str
   const moves = [...inlineMoves, ...bulletMoves].slice(0, 4);
   if (!moves.length) return undefined;
   if (!pokemon) return moves;
-  return moves.map((move) => matchCatalogMove(move, pokemon.moves) ?? move);
+  const legal = legalMovesForPokemon(pokemon, moves);
+  return legal.length ? legal : undefined;
 }
 
 function parseNatureFromText(text: string): string | undefined {
@@ -1512,7 +1698,9 @@ export function mergeBuildAssistActions(
   const mentions = findPokemonNamesInText(reply);
   const conversationText = mergeOptions.conversationText ?? reply;
   const fillMissingSets = mergeOptions.fillMissingTeamAdds
-    ?? isFullTeamIntent(conversationText, team.length);
+    ?? isFullTeamIntent(conversationText, team.length)
+    ?? isFinishSetIntent(conversationText)
+    ?? isReplaceTeamMemberIntent(conversationText);
 
   let working = actions.filter((action) => {
     if (action.type !== "add_pokemon" && action.type !== "update_set") return true;
@@ -1528,7 +1716,12 @@ export function mergeBuildAssistActions(
   for (const action of working) {
     if (action.type === "update_set") {
       const enriched = resolveUpdateSetAction(action.pokemon, reply, mentions, action, conversationText) ?? action;
-      updateBySpecies.set(enriched.pokemon.toLowerCase(), enriched);
+      const finalized = {
+        type: "update_set" as const,
+        ...finalizeSetActionFields(enriched, reply, mentions, conversationText, fillMissingSets),
+        pokemon: enriched.pokemon,
+      };
+      updateBySpecies.set(finalized.pokemon.toLowerCase(), finalized);
       continue;
     }
     if (action.type === "add_pokemon") {
@@ -1554,13 +1747,23 @@ export function mergeBuildAssistActions(
 
   for (const inferred of parseUpdateSetActionsFromReply(reply, team)) {
     if (!updateBySpecies.has(inferred.pokemon.toLowerCase())) {
-      updateBySpecies.set(inferred.pokemon.toLowerCase(), inferred);
+      const finalized = {
+        type: "update_set" as const,
+        ...finalizeSetActionFields(inferred, reply, mentions, conversationText, fillMissingSets),
+        pokemon: inferred.pokemon,
+      };
+      updateBySpecies.set(finalized.pokemon.toLowerCase(), finalized);
     }
   }
 
   const selectedInferred = inferUpdateSetForSelected(reply, team, selectedId);
   if (selectedInferred) {
-    updateBySpecies.set(selectedInferred.pokemon.toLowerCase(), selectedInferred);
+    const finalized = {
+      type: "update_set" as const,
+      ...finalizeSetActionFields(selectedInferred, reply, mentions, conversationText, fillMissingSets),
+      pokemon: selectedInferred.pokemon,
+    };
+    updateBySpecies.set(finalized.pokemon.toLowerCase(), finalized);
   }
 
   const coveredAdds = new Set(adds.map((action) => action.pokemon.toLowerCase()));
@@ -1611,7 +1814,107 @@ export function mergeBuildAssistActions(
     coveredAdds.add(species);
   }
 
-  return [...enforceItemClauseOnActions([...others, ...updateBySpecies.values(), ...adds], team)];
+  const replacedSpecies = new Set<string>();
+  for (const action of adds) {
+    const replaces = action.replaces ?? findTeamReplacementTarget(conversationText, team, action.pokemon);
+    if (replaces) replacedSpecies.add(replaces.toLowerCase());
+  }
+  for (const species of replacedSpecies) {
+    updateBySpecies.delete(species);
+  }
+
+  return [...enforceItemClauseOnActions(
+    [...others, ...updateBySpecies.values(), ...adds].map((action) => (
+      action.type === "add_pokemon"
+        ? attachReplacementTarget(action, team, conversationText)
+        : action
+    )),
+    team,
+  )];
+}
+
+function spreadTotal(evs: Partial<Record<StatKey, number>>) {
+  return STAT_KEYS.reduce((sum, stat) => sum + (evs[stat] ?? 0), 0);
+}
+
+function spreadMax(evs: Partial<Record<StatKey, number>>) {
+  return Math.max(0, ...STAT_KEYS.map((stat) => evs[stat] ?? 0));
+}
+
+function looksLikeShowdownSpread(raw: Partial<Record<StatKey, number>>) {
+  return spreadTotal(raw) > CHAMPIONS_STAT_POINT_TOTAL || spreadMax(raw) > CHAMPIONS_STAT_POINT_MAX;
+}
+
+function spreadAllocationPriority(nature?: string): StatKey[] {
+  if (nature && OFFENSIVE_SPECIAL_NATURES.has(nature)) return ["SpA", "Spe", "HP", "SpD", "Def", "Atk"];
+  if (nature && OFFENSIVE_PHYSICAL_NATURES.has(nature)) return ["Atk", "Spe", "HP", "Def", "SpD", "SpA"];
+  if (nature && DEFENSIVE_NATURES.has(nature)) return ["HP", "Def", "SpD", "SpA", "Atk", "Spe"];
+  return ["HP", "SpA", "Atk", "Spe", "Def", "SpD"];
+}
+
+function convertProportionalSpread(raw: Partial<Record<StatKey, number>>): Record<StatKey, number> {
+  const total = spreadTotal(raw);
+  if (total <= 0) {
+    return { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 };
+  }
+
+  const scaled = { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 } satisfies Record<StatKey, number>;
+  for (const stat of STAT_KEYS) {
+    scaled[stat] = Math.round(((raw[stat] ?? 0) / total) * CHAMPIONS_STAT_POINT_TOTAL);
+  }
+
+  const invested = STAT_KEYS.filter((stat) => (raw[stat] ?? 0) > 0);
+  const priority = invested.length ? invested : STAT_KEYS;
+  let guard = 0;
+  while (spreadTotal(scaled) < CHAMPIONS_STAT_POINT_TOTAL && guard < 200) {
+    const stat = priority[guard % priority.length];
+    if (scaled[stat] < CHAMPIONS_STAT_POINT_MAX) scaled[stat] += 1;
+    guard += 1;
+  }
+  while (spreadTotal(scaled) > CHAMPIONS_STAT_POINT_TOTAL) {
+    const trimStat = SPREAD_TRIM_PRIORITY.find((stat) => scaled[stat] > 0);
+    if (!trimStat) break;
+    scaled[trimStat] -= 1;
+  }
+
+  return scaled;
+}
+
+function fillSpreadToTotal(evs: Record<StatKey, number>, nature?: string): Record<StatKey, number> {
+  const next = { ...evs };
+  const priority = spreadAllocationPriority(nature);
+  let guard = 0;
+  while (spreadTotal(next) < CHAMPIONS_STAT_POINT_TOTAL && guard < 200) {
+    const stat = priority.find((entry) => next[entry] < CHAMPIONS_STAT_POINT_MAX);
+    if (!stat) break;
+    next[stat] += 1;
+    guard += 1;
+  }
+  return next;
+}
+
+export function finalizeActionSpread(
+  raw: Partial<Record<StatKey, number>> | undefined,
+  nature?: string,
+  options: { fillToTotal?: boolean } = {},
+): Record<StatKey, number> | undefined {
+  if (!raw && !nature) return undefined;
+
+  let working = raw ?? {};
+  if (looksLikeShowdownSpread(working)) {
+    working = convertProportionalSpread(working);
+  }
+
+  let sanitized: Record<StatKey, number> | null = sanitizeActionSpread(working);
+  if (!sanitized && Object.keys(working).length) {
+    sanitized = normalizeActionSpread(working);
+  }
+  if (!sanitized && nature) {
+    sanitized = defaultEvsForSet({ pokemon: "", nature }) ?? null;
+  }
+  if (!sanitized) return undefined;
+
+  return options.fillToTotal ? fillSpreadToTotal(sanitized, nature) : sanitized;
 }
 
 export function normalizeActionSpread(rawEvs: Partial<Record<StatKey, number>>) {
@@ -1666,9 +1969,18 @@ export function resolveSetChanges(
     ?? (action.item ? findMegaFormByItem(pokemon, action.item)?.name : undefined);
   const legalAbilities = legalAbilitiesForSet(pokemon, megaFormName);
   const ability = action.ability && legalAbilities.includes(action.ability) ? action.ability : undefined;
-  const item = action.item && pokemon.items.includes(action.item) ? action.item : undefined;
+  let item = action.item && pokemon.items.includes(action.item) ? action.item : undefined;
+  if (item && isMismatchedWeatherRock(pokemon, action, item)) {
+    item = preferredWeatherExtensionRock(pokemon, action) ?? item;
+  }
+  if (!item) {
+    const resolved = resolveSetItem(pokemon, { ...action, ability: ability ?? action.ability });
+    item = resolved || undefined;
+  }
   const nature = action.nature && ALL_NATURES.includes(action.nature) ? action.nature : undefined;
-  const evs = action.evs ? sanitizeActionSpread(action.evs) ?? normalizeActionSpread(action.evs) ?? undefined : undefined;
+  const evs = action.evs
+    ? finalizeActionSpread(action.evs, action.nature)
+    : (action.nature ? finalizeActionSpread(undefined, action.nature) : undefined);
 
   return {
     item,
