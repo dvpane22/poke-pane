@@ -10,6 +10,7 @@ import {
   mergeBuildAssistActions,
   normalizeActionSpread,
   resolveAddPokemonChanges,
+  resolveSetChanges,
   streamBuildAssistMessage,
   type BuildAssistMessage,
 } from "../../lib/build-assist";
@@ -72,7 +73,7 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
       setMessages((current) => current.map((message, index) => (
         index === assistantIndex ? { ...message, content: reply } : message
       )));
-      const visibleActions = mergeBuildAssistActions(proposedActions, reply, team);
+      const visibleActions = mergeBuildAssistActions(proposedActions, reply, team, selectedId);
       setActions(visibleActions.map((action, index) => ({ id: `${Date.now()}-${index}`, action })));
     } catch (submitError) {
       setMessages((current) => current.filter((_, index) => index !== assistantIndex));
@@ -100,6 +101,14 @@ export function BuildAssistBubble({ team, selectedId, mode = "launcher", onAddPo
           entry.id === pending.id ? { ...entry, appliedPokemonId: addedId } : entry
         )));
       }
+      return;
+    }
+    if (action.type === "update_set") {
+      const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
+      if (pokemon && selectedBuild?.species.toLowerCase() === action.pokemon.toLowerCase()) {
+        onUpdateSelected?.(resolveSetChanges(action, pokemon));
+      }
+      setActions((current) => current.filter((entry) => entry.id !== pending.id));
       return;
     }
     if (action.type === "set_item") onUpdateSelected?.({ item: action.item });
@@ -267,27 +276,28 @@ function BuildAssistActionCard({ pending, team, selectedId, onApply, onRemove, o
   const selectedBuild = team.find((pokemon) => pokemon.id === selectedId) ?? null;
   const selectedData = POKEMON.find((pokemon) => pokemon.name === selectedBuild?.species) ?? null;
   const action = pending.action;
-  const pokemon = action.type === "add_pokemon"
-    ? POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase()) ?? null
+  const setCardAction = action.type === "add_pokemon" || action.type === "update_set" ? action : null;
+  const pokemon = setCardAction
+    ? POKEMON.find((entry) => entry.name.toLowerCase() === setCardAction.pokemon.toLowerCase()) ?? null
     : null;
   const isApplied = Boolean(pending.appliedPokemonId);
   const disabledReason = actionDisabledReason(action, team, selectedData, Boolean(selectedBuild), isApplied);
-  const isAddPokemon = action.type === "add_pokemon";
+  const isSetCard = Boolean(setCardAction);
 
   return (
     <article className={`build-assist-action-card${isApplied ? " applied" : ""}`}>
-      <div className={`build-assist-action-layout${isAddPokemon ? " add-pokemon" : ""}`}>
-        {isAddPokemon ? (
+      <div className={`build-assist-action-layout${isSetCard ? " add-pokemon" : ""}`}>
+        {isSetCard && setCardAction ? (
           <>
             <div className="build-assist-action-art">
               {pokemon ? <img src={pokemon.sprite} alt="" /> : <Sparkles size={24} />}
               <div className="build-assist-action-title">
-                <small>{isApplied ? "Added to team" : "Suggested change"}</small>
+                <small>{isApplied ? "Applied to team" : "Suggested change"}</small>
                 <strong>{actionLabel(action)}</strong>
               </div>
             </div>
             <div className="build-assist-action-body">
-              <AddPokemonPreview action={action} />
+              <SetPreview action={setCardAction} />
             </div>
           </>
         ) : (
@@ -331,8 +341,8 @@ function BuildAssistActionCard({ pending, team, selectedId, onApply, onRemove, o
   );
 }
 
-function AddPokemonPreview({ action }: {
-  action: Extract<BuildAssistAction, { type: "add_pokemon" }>;
+function SetPreview({ action }: {
+  action: Extract<BuildAssistAction, { type: "add_pokemon" | "update_set" }>;
 }) {
   const moves = action.moves?.filter(Boolean).slice(0, 4) ?? [];
   const evs = action.evs ?? {};
@@ -364,6 +374,7 @@ function AddPokemonPreview({ action }: {
 
 function actionLabel(action: BuildAssistAction) {
   if (action.type === "add_pokemon") return `Add ${action.pokemon}`;
+  if (action.type === "update_set") return `Apply set to ${action.pokemon}`;
   if (action.type === "apply_spread") return `Apply ${formatActionSpread(action.evs)}`;
   if (action.type === "set_item") return `Set item: ${action.item}`;
   if (action.type === "set_ability") return `Set ability: ${action.ability}`;
@@ -383,6 +394,14 @@ function actionDisabledReason(
     if (team.length >= 6) return "Team is already full.";
     const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === action.pokemon.toLowerCase());
     if (!pokemon) return "That Pokémon is not in this catalog.";
+    if (action.evs && !normalizeActionSpread(action.evs)) return "Spread must stay within 32 per stat and 66 total.";
+    return "";
+  }
+  if (action.type === "update_set") {
+    if (!hasSelected) return "Select a Pokémon first.";
+    if (!selectedData || selectedData.name.toLowerCase() !== action.pokemon.toLowerCase()) {
+      return `Select ${action.pokemon} first.`;
+    }
     if (action.evs && !normalizeActionSpread(action.evs)) return "Spread must stay within 32 per stat and 66 total.";
     return "";
   }

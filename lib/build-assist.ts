@@ -37,17 +37,19 @@ export type BuildAssistResponse = {
   actions?: BuildAssistAction[];
 };
 
+export type BuildAssistSetSuggestion = {
+  pokemon: string;
+  reason?: string;
+  item?: string;
+  ability?: string;
+  nature?: string;
+  moves?: string[];
+  evs?: Partial<Record<StatKey, number>>;
+};
+
 export type BuildAssistAction =
-  | {
-    type: "add_pokemon";
-    pokemon: string;
-    reason?: string;
-    item?: string;
-    ability?: string;
-    nature?: string;
-    moves?: string[];
-    evs?: Partial<Record<StatKey, number>>;
-  }
+  | ({ type: "add_pokemon" } & BuildAssistSetSuggestion)
+  | ({ type: "update_set" } & BuildAssistSetSuggestion)
   | { type: "apply_spread"; evs: Partial<Record<StatKey, number>>; reason?: string }
   | { type: "set_item"; item: string; reason?: string }
   | { type: "set_ability"; ability: string; reason?: string }
@@ -229,16 +231,21 @@ export function buildBuildAssistSystemPrompt(context: BuildAssistContext, messag
     "If a suggested option is not in that Pokémon's legal list, do not recommend it.",
     "When the team is incomplete, prioritize what to add next and why.",
     "When a Pokémon is selected, weight advice toward building around or supporting that mon.",
+    "When the user asks to build, tighten, max stats, or apply a set for the selected Pokémon, include one update_set action with that species and the full ability, item, nature, moves, and evs.",
+    "Do not ask the user to confirm in chat when update_set is available — the apply card is the confirmation step.",
+    "Keep visible replies to 1-2 short sentences when update_set is included; the card shows the full set.",
     "Do not claim exact damage calcs unless the app ran them — suggest what to verify in Pane Coach instead.",
     "When your answer includes a concrete change the app could apply, append one hidden action block at the very end.",
     "If you suggest adding a specific Pokémon, always include an add_pokemon action for that Pokémon with ability, item, nature, moves, and evs when you mention them.",
     "If you suggest multiple new Pokémon in one answer, include one add_pokemon action per Pokémon in the same PANE_ACTIONS block.",
-    "Visible prose and hidden add_pokemon payloads must match — do not describe spreads in text without putting them in the action.",
+    "Visible prose and hidden action payloads must match — do not describe spreads in text without putting them in the action.",
     "If the user asks you to add or apply something, do not claim it is done. Provide the action for approval.",
     "The hidden block format is exactly: [[PANE_ACTIONS:{\"actions\":[...]}]]",
     "Never print raw JSON in the visible reply. Raw JSON belongs only inside the hidden PANE_ACTIONS block.",
-    "Allowed action types: add_pokemon with pokemon and optional item, ability, nature, moves, evs; apply_spread with evs; set_item with item; set_ability with ability; set_nature with nature; set_moves with moves.",
+    "Allowed action types: add_pokemon; update_set with pokemon plus optional item, ability, nature, moves, evs; apply_spread with evs; set_item with item; set_ability with ability; set_nature with nature; set_moves with moves.",
+    "Prefer one update_set action over separate apply_spread, set_moves, set_item, set_ability, and set_nature actions for the same Pokémon.",
     "When suggesting a partner, include a starter set in the add_pokemon action whenever possible: ability, item, nature, moves, and evs.",
+    "Hidden update example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"update_set\",\"pokemon\":\"Basculegion\",\"ability\":\"Adaptability\",\"item\":\"Life Orb\",\"nature\":\"Jolly\",\"moves\":[\"Wave Crash\",\"Liquidation\",\"Crunch\",\"Protect\"],\"evs\":{\"HP\":36,\"Atk\":32,\"Spe\":32},\"reason\":\"Max Attack and Speed spread.\"}]}]]",
     "Hidden multi-add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Whimsicott\",\"ability\":\"Prankster\",\"item\":\"Focus Sash\",\"nature\":\"Timid\",\"moves\":[\"Tailwind\",\"Encore\",\"Moonblast\",\"Protect\"],\"evs\":{\"HP\":32,\"Def\":32,\"SpD\":2},\"reason\":\"Tailwind setter.\"},{\"type\":\"add_pokemon\",\"pokemon\":\"Dragapult\",\"ability\":\"Clear Body\",\"item\":\"Life Orb\",\"nature\":\"Hasty\",\"moves\":[\"Phantom Force\",\"Draco Meteor\",\"Protect\",\"Tailwind\"],\"evs\":{\"Atk\":32,\"SpA\":32,\"Spe\":2},\"reason\":\"Fast attacker that can reuse Tailwind.\"}]}]]",
     "Hidden add example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"add_pokemon\",\"pokemon\":\"Torkoal\",\"ability\":\"Drought\",\"item\":\"Charcoal\",\"nature\":\"Quiet\",\"moves\":[\"Eruption\",\"Heat Wave\",\"Protect\",\"Solar Beam\"],\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Sun plus Trick Room support.\"}]}]]",
     "Hidden spread example: [[PANE_ACTIONS:{\"actions\":[{\"type\":\"apply_spread\",\"evs\":{\"HP\":32,\"SpA\":32,\"Def\":2},\"reason\":\"Keeps offense while adding bulk.\"}]}]]",
@@ -381,24 +388,36 @@ function findJsonObjectEnd(source: string, start: number) {
   return -1;
 }
 
+function readSetAction(
+  type: "add_pokemon" | "update_set",
+  pokemon: string,
+  candidate: Record<string, unknown>,
+  reason?: string,
+): Extract<BuildAssistAction, { type: "add_pokemon" | "update_set" }> {
+  return {
+    type,
+    pokemon,
+    reason,
+    item: typeof candidate.item === "string" ? candidate.item : undefined,
+    ability: typeof candidate.ability === "string" ? candidate.ability : undefined,
+    nature: typeof candidate.nature === "string" ? candidate.nature : undefined,
+    moves: Array.isArray(candidate.moves)
+      ? candidate.moves.filter((move): move is string => typeof move === "string").slice(0, 4)
+      : undefined,
+    evs: readActionEvs(candidate.evs),
+  };
+}
+
 function normalizeBuildAssistAction(action: unknown): BuildAssistAction | null {
   if (!action || typeof action !== "object") return null;
   const candidate = action as Record<string, unknown>;
   const reason = typeof candidate.reason === "string" ? candidate.reason : undefined;
 
   if (candidate.type === "add_pokemon" && typeof candidate.pokemon === "string") {
-    return {
-      type: "add_pokemon",
-      pokemon: candidate.pokemon,
-      reason,
-      item: typeof candidate.item === "string" ? candidate.item : undefined,
-      ability: typeof candidate.ability === "string" ? candidate.ability : undefined,
-      nature: typeof candidate.nature === "string" ? candidate.nature : undefined,
-      moves: Array.isArray(candidate.moves)
-        ? candidate.moves.filter((move): move is string => typeof move === "string").slice(0, 4)
-        : undefined,
-      evs: readActionEvs(candidate.evs),
-    };
+    return readSetAction("add_pokemon", candidate.pokemon, candidate, reason);
+  }
+  if (candidate.type === "update_set" && typeof candidate.pokemon === "string") {
+    return readSetAction("update_set", candidate.pokemon, candidate, reason);
   }
   if (candidate.type === "apply_spread" && candidate.evs && typeof candidate.evs === "object") {
     const evs = readActionEvs(candidate.evs) ?? {};
@@ -623,11 +642,42 @@ function matchCatalogOption(value: string | undefined, options: string[]) {
     ?? options.find((option) => normalized.includes(option.toLowerCase()));
 }
 
-function parseAddPokemonFromSection(
+function hasSetSuggestionContent(section: string) {
+  return scorePokemonSection(section) >= 3
+    || Boolean(readLabeledValue(section, ["Ability", "Item", "Nature", "Moves", "EVs", "Stat Points"]))
+    || Boolean(parseEvsFromText(section))
+    || Boolean(parseMovesFromText(section));
+}
+
+function mergeSetFields(
+  explicit: BuildAssistSetSuggestion,
+  parsed: BuildAssistSetSuggestion,
+  sectionScore: number,
+): BuildAssistSetSuggestion {
+  const preferParsed = sectionScore >= 4;
+  const pick = <T,>(parsedValue: T | undefined, explicitValue: T | undefined) => (
+    preferParsed ? parsedValue ?? explicitValue : explicitValue ?? parsedValue
+  );
+  const explicitMoveCount = explicit.moves?.filter(Boolean).length ?? 0;
+  const parsedMoveCount = parsed.moves?.filter(Boolean).length ?? 0;
+  const moves = parsedMoveCount >= explicitMoveCount ? parsed.moves : explicit.moves ?? parsed.moves;
+
+  return {
+    pokemon: explicit.pokemon,
+    reason: explicit.reason ?? parsed.reason,
+    ability: pick(parsed.ability, explicit.ability),
+    item: pick(parsed.item, explicit.item),
+    nature: pick(parsed.nature, explicit.nature),
+    moves,
+    evs: preferParsed ? parsed.evs ?? explicit.evs : explicit.evs ?? parsed.evs,
+  };
+}
+
+function parseSetSuggestionFromSection(
   pokemonName: string,
   section: string,
   reason?: string,
-): Extract<BuildAssistAction, { type: "add_pokemon" }> | null {
+): BuildAssistSetSuggestion | null {
   const pokemon = POKEMON.find((entry) => entry.name.toLowerCase() === pokemonName.toLowerCase());
   if (!pokemon) return null;
 
@@ -638,7 +688,6 @@ function parseAddPokemonFromSection(
   const evs = parseEvsFromText(section);
 
   return {
-    type: "add_pokemon",
     pokemon: pokemon.name,
     reason,
     ability: matchCatalogOption(abilityRaw, pokemon.abilities) ?? abilityRaw,
@@ -647,6 +696,92 @@ function parseAddPokemonFromSection(
     moves,
     evs,
   };
+}
+
+function resolveUpdateSetAction(
+  pokemonName: string,
+  reply: string,
+  allMentionNames: string[],
+  explicit?: Extract<BuildAssistAction, { type: "update_set" }>,
+): Extract<BuildAssistAction, { type: "update_set" }> | null {
+  const section = bestSectionForPokemon(reply, pokemonName, allMentionNames);
+  const sectionScore = scorePokemonSection(section);
+  const parsed = parseSetSuggestionFromSection(pokemonName, section, explicit?.reason);
+  if (!parsed && !explicit) return null;
+  if (!parsed) return explicit ?? null;
+  if (!explicit) return { type: "update_set", ...parsed };
+  return { type: "update_set", ...mergeSetFields(explicit, parsed, sectionScore) };
+}
+
+function convertOnTeamAddsToUpdates(actions: BuildAssistAction[], team: PokemonBuild[]) {
+  const teamSpecies = new Set(team.map((pokemon) => pokemon.species.toLowerCase()));
+  return actions.map((action) => {
+    if (action.type !== "add_pokemon" || !teamSpecies.has(action.pokemon.toLowerCase())) return action;
+    const { type: _type, ...fields } = action;
+    return { type: "update_set" as const, ...fields };
+  });
+}
+
+function coalescePatchActions(actions: BuildAssistAction[], selectedSpecies: string | null) {
+  const patchTypes = new Set(["apply_spread", "set_item", "set_ability", "set_nature", "set_moves"]);
+  const patches = actions.filter((action) => patchTypes.has(action.type));
+  if (!patches.length || !selectedSpecies) return actions;
+
+  const withoutPatches = actions.filter((action) => !patchTypes.has(action.type));
+  const existingUpdate = withoutPatches.find(
+    (action): action is Extract<BuildAssistAction, { type: "update_set" }> =>
+      action.type === "update_set" && action.pokemon.toLowerCase() === selectedSpecies.toLowerCase(),
+  );
+
+  const merged: Extract<BuildAssistAction, { type: "update_set" }> = existingUpdate ?? {
+    type: "update_set",
+    pokemon: selectedSpecies,
+  };
+
+  for (const patch of patches) {
+    if (patch.type === "apply_spread") merged.evs = patch.evs;
+    if (patch.type === "set_item") merged.item = patch.item;
+    if (patch.type === "set_ability") merged.ability = patch.ability;
+    if (patch.type === "set_nature") merged.nature = patch.nature;
+    if (patch.type === "set_moves") merged.moves = patch.moves;
+    merged.reason = merged.reason ?? patch.reason;
+  }
+
+  return [
+    ...withoutPatches.filter((action) => action !== existingUpdate),
+    merged,
+  ];
+}
+
+function inferUpdateSetForSelected(
+  reply: string,
+  team: PokemonBuild[],
+  selectedId: string | null,
+): Extract<BuildAssistAction, { type: "update_set" }> | null {
+  const selected = team.find((pokemon) => pokemon.id === selectedId);
+  if (!selected || !hasSetSuggestionContent(reply)) return null;
+  const mentions = findPokemonNamesInText(reply);
+  const allMentions = mentions.includes(selected.species)
+    ? mentions
+    : [selected.species, ...mentions];
+  return resolveUpdateSetAction(selected.species, reply, allMentions);
+}
+
+function parseUpdateSetActionsFromReply(reply: string, team: PokemonBuild[]) {
+  const teamSpecies = new Set(team.map((pokemon) => pokemon.species.toLowerCase()));
+  const mentions = findPokemonNamesInText(reply).filter((name) => teamSpecies.has(name.toLowerCase()));
+  return mentions.map((name) => resolveUpdateSetAction(name, reply, mentions)).filter(
+    (action): action is Extract<BuildAssistAction, { type: "update_set" }> => Boolean(action),
+  );
+}
+
+function parseAddPokemonFromSection(
+  pokemonName: string,
+  section: string,
+  reason?: string,
+): Extract<BuildAssistAction, { type: "add_pokemon" }> | null {
+  const suggestion = parseSetSuggestionFromSection(pokemonName, section, reason);
+  return suggestion ? { type: "add_pokemon", ...suggestion } : null;
 }
 
 function findPokemonMentionsInReply(reply: string, teamSpecies: Set<string>) {
@@ -661,21 +796,62 @@ export function parseAddPokemonActionsFromReply(reply: string, team: PokemonBuil
   );
 }
 
-export function mergeBuildAssistActions(actions: BuildAssistAction[], reply: string, team: PokemonBuild[]) {
+export function mergeBuildAssistActions(
+  actions: BuildAssistAction[],
+  reply: string,
+  team: PokemonBuild[],
+  selectedId: string | null = null,
+) {
+  const selected = team.find((pokemon) => pokemon.id === selectedId) ?? null;
+  const selectedSpecies = selected?.species ?? null;
   const teamSpecies = new Set(team.map((pokemon) => pokemon.species.toLowerCase()));
-  const mentions = findPokemonMentionsInReply(reply, teamSpecies).map((entry) => entry.name);
-  const nonAddActions = actions.filter((action) => action.type !== "add_pokemon");
-  const explicitAdds = actions.filter((action): action is Extract<BuildAssistAction, { type: "add_pokemon" }> => action.type === "add_pokemon");
+  const mentions = findPokemonNamesInText(reply);
 
-  const enrichedAdds = explicitAdds.map((action) => (
-    resolveAddPokemonAction(action.pokemon, reply, mentions, action) ?? action
-  ));
-  const covered = new Set(enrichedAdds.map((action) => action.pokemon.toLowerCase()));
+  let working = convertOnTeamAddsToUpdates(actions, team);
+  working = coalescePatchActions(working, selectedSpecies);
 
-  const inferredAdds = parseAddPokemonActionsFromReply(reply, team).filter(
-    (action) => !covered.has(action.pokemon.toLowerCase()),
-  );
-  return [...nonAddActions, ...enrichedAdds, ...inferredAdds];
+  const updateBySpecies = new Map<string, Extract<BuildAssistAction, { type: "update_set" }>>();
+  const adds: Extract<BuildAssistAction, { type: "add_pokemon" }>[] = [];
+  const others: BuildAssistAction[] = [];
+
+  for (const action of working) {
+    if (action.type === "update_set") {
+      const enriched = resolveUpdateSetAction(action.pokemon, reply, mentions, action) ?? action;
+      updateBySpecies.set(enriched.pokemon.toLowerCase(), enriched);
+      continue;
+    }
+    if (action.type === "add_pokemon") {
+      const enriched = resolveAddPokemonAction(action.pokemon, reply, mentions, action) ?? action;
+      if (teamSpecies.has(enriched.pokemon.toLowerCase())) {
+        const { type: _type, ...fields } = enriched;
+        updateBySpecies.set(enriched.pokemon.toLowerCase(), { type: "update_set", ...fields });
+      } else {
+        adds.push(enriched);
+      }
+      continue;
+    }
+    others.push(action);
+  }
+
+  for (const inferred of parseUpdateSetActionsFromReply(reply, team)) {
+    if (!updateBySpecies.has(inferred.pokemon.toLowerCase())) {
+      updateBySpecies.set(inferred.pokemon.toLowerCase(), inferred);
+    }
+  }
+
+  const selectedInferred = inferUpdateSetForSelected(reply, team, selectedId);
+  if (selectedInferred) {
+    updateBySpecies.set(selectedInferred.pokemon.toLowerCase(), selectedInferred);
+  }
+
+  const coveredAdds = new Set(adds.map((action) => action.pokemon.toLowerCase()));
+  for (const inferred of parseAddPokemonActionsFromReply(reply, team)) {
+    if (coveredAdds.has(inferred.pokemon.toLowerCase()) || teamSpecies.has(inferred.pokemon.toLowerCase())) continue;
+    adds.push(inferred);
+    coveredAdds.add(inferred.pokemon.toLowerCase());
+  }
+
+  return [...others, ...updateBySpecies.values(), ...adds];
 }
 
 export function normalizeActionSpread(rawEvs: Partial<Record<StatKey, number>>) {
@@ -689,8 +865,8 @@ export function normalizeActionSpread(rawEvs: Partial<Record<StatKey, number>>) 
   return total <= CHAMPIONS_STAT_POINT_TOTAL ? evs : null;
 }
 
-export function resolveAddPokemonChanges(
-  action: Extract<BuildAssistAction, { type: "add_pokemon" }>,
+export function resolveSetChanges(
+  action: BuildAssistSetSuggestion,
   pokemon: typeof POKEMON[number],
 ): Partial<PokemonBuild> {
   const suggestedMoves = action.moves?.filter(Boolean).slice(0, 4)
@@ -708,6 +884,13 @@ export function resolveAddPokemonChanges(
     moves: suggestedMoves.length ? [...suggestedMoves, "", "", "", ""].slice(0, 4) : undefined,
     evs,
   };
+}
+
+export function resolveAddPokemonChanges(
+  action: Extract<BuildAssistAction, { type: "add_pokemon" }>,
+  pokemon: typeof POKEMON[number],
+): Partial<PokemonBuild> {
+  return resolveSetChanges(action, pokemon);
 }
 
 export function formatActionSpread(evs: Partial<Record<StatKey, number>>) {

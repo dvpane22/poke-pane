@@ -32,7 +32,6 @@ import {
   ShieldCheck,
   Snowflake,
   Sparkles,
-  Sun,
   Swords,
   Trash2,
   Upload,
@@ -83,7 +82,6 @@ const OPTION_DETAILS = optionDetails as {
 const STORAGE_KEY = "poke-pane-team-v3";
 const SAVED_TEAMS_KEY = "poke-pane-saved-teams-v1";
 const ACTIVE_SAVED_TEAM_KEY = "poke-pane-active-saved-team-v1";
-const THEME_KEY = "poke-pane-theme";
 const NATURE_STATS = ["Atk", "Def", "SpA", "SpD", "Spe"] as const;
 const NATURE_CHART = [
   ["Hardy", "Lonely", "Adamant", "Naughty", "Brave"],
@@ -207,7 +205,6 @@ export default function Home() {
   const [transferOpen, setTransferOpen] = useState<"import" | "export" | null>(null);
   const [transferText, setTransferText] = useState("");
   const [query, setQuery] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [savedTeams, setSavedTeams] = useState<SavedTeam[]>([]);
   const [savedTeamsReady, setSavedTeamsReady] = useState(false);
   const [activeSavedTeamId, setActiveSavedTeamId] = useState<string | null>(null);
@@ -256,16 +253,6 @@ export default function Home() {
     if (activeSavedTeamId) localStorage.setItem(ACTIVE_SAVED_TEAM_KEY, activeSavedTeamId);
     else localStorage.removeItem(ACTIVE_SAVED_TEAM_KEY);
   }, [activeSavedTeamId, savedTeamsReady]);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    if (savedTheme === "dark" || savedTheme === "light") setTheme(savedTheme);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
 
   const selected = team.find((pokemon) => pokemon.id === selectedId) ?? null;
   const selectedData = POKEMON.find((pokemon) => pokemon.name === selected?.species) ?? null;
@@ -383,7 +370,6 @@ export default function Home() {
           <div className="brand-mark"><span /></div>
           <div>
             <strong>POKE PANE</strong>
-            <small>Build with clarity. Battle with intent.</small>
           </div>
         </div>
         <div className="format-pill">
@@ -392,15 +378,6 @@ export default function Home() {
           <ChevronDown size={14} />
         </div>
         <div className="header-actions">
-          <button
-            className="icon-button theme-toggle"
-            type="button"
-            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-            title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-            onClick={() => setTheme((current) => current === "light" ? "dark" : "light")}
-          >
-            {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
-          </button>
           <button className="ghost-button library-button" type="button" onClick={() => setTeamLibraryOpen(true)}>
             <FolderOpen size={16} /> My teams
             {savedTeams.length > 0 && <span className="saved-team-count">{savedTeams.length}</span>}
@@ -2763,15 +2740,15 @@ function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
     <section className={`coach-drawer ${open ? "open" : ""}`}>
       <div className="coach-strip">
         <button className="coach-identity" type="button" onClick={() => setOpen(!open)} aria-expanded={open}>
-          <span className="coach-avatar"><Sparkles size={17} /></span>
+          <span className="coach-avatar"><Swords size={17} /></span>
           <span className="sr-only">Pane Coach</span>
         </button>
         <form className="coach-strip-guide" data-intent={guidedIntent} onSubmit={submitGuidedQuestion} aria-label="Guided Pane Coach question builder">
           <div className="coach-strip-intents" role="group" aria-label="Choose what Pane Coach should check">
             {([
               ["ko", "KO"],
-              ["survive", "Live"],
-              ["speed", "Faster"],
+              ["survive", "Survive"],
+              ["speed", "Speed"],
             ] as const).map(([intent, label]) => (
               <button
                 key={intent}
@@ -2829,7 +2806,11 @@ function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
                   event.currentTarget.select();
                 }}
                 onBlur={() => setFocusedGuideField(null)}
-                placeholder={guidedIntent === "survive" ? "Type foe move..." : "Type move..."}
+                placeholder={
+                  !guidedMoveOptions.length
+                    ? (guidedIntent === "survive" ? "Pick foe first" : "No move")
+                    : (guidedIntent === "survive" ? "Type foe move..." : "Type move...")
+                }
                 disabled={!guidedMoveOptions.length}
                 autoComplete="off"
               />
@@ -2851,9 +2832,6 @@ function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
                     </button>
                   ))}
                 </div>
-              )}
-              {!guidedMoveOptions.length && (
-                <small>{guidedIntent === "survive" ? "Pick foe first" : "No move"}</small>
               )}
             </label>
           ) : null}
