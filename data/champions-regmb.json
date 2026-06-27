@@ -272,7 +272,7 @@
         "types": [
           "Dragon"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/garchomp.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/garchomp.png",
@@ -1687,8 +1687,8 @@
       "Spe": 85
     },
     "megaForms": [],
-    "sprite": "",
-    "artwork": "",
+    "sprite": "https://play.pokemonshowdown.com/sprites/gen5/archaludon.png",
+    "artwork": "https://play.pokemonshowdown.com/sprites/gen5/archaludon.png",
     "abilities": [
       "Stalwart",
       "Stamina",
@@ -5473,7 +5473,7 @@
           "Ground",
           "Steel"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/excadrill.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/excadrill.png",
@@ -5960,7 +5960,7 @@
           "Rock",
           "Poison"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/glimmora.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/glimmora.png",
@@ -7460,7 +7460,7 @@
           "Dragon",
           "Flying"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/dragonite.png"
+        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/dragonite-mega.png"
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/dragonite.png",
@@ -12554,7 +12554,7 @@
           "Fairy",
           "Flying"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/clefable.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/clefable.png",
@@ -14802,7 +14802,7 @@
           "Fighting",
           "Steel"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/lucario.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/lucario.png",
@@ -15078,7 +15078,7 @@
         "types": [
           "Electric"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/raichu.png"
+        "artwork": ""
       },
       {
         "name": "Raichu-Mega-Y",
@@ -15094,7 +15094,7 @@
         "types": [
           "Electric"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/raichu.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/raichu.png",
@@ -19147,7 +19147,7 @@
           "Ghost",
           "Fire"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/chandelure.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/chandelure.png",
@@ -22677,8 +22677,8 @@
       "Spe": 44
     },
     "megaForms": [],
-    "sprite": "",
-    "artwork": "",
+    "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hydrapple.png",
+    "artwork": "https://play.pokemonshowdown.com/sprites/gen5/hydrapple.png",
     "abilities": [
       "Regenerator",
       "Sticky Hold",
@@ -22920,7 +22920,7 @@
           "Normal",
           "Dragon"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/drampa.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/drampa.png",
@@ -26745,7 +26745,7 @@
           "Water",
           "Dark"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/greninja.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/greninja.png",
@@ -30422,7 +30422,7 @@
           "Water",
           "Psychic"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/starmie.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/starmie.png",
@@ -31891,7 +31891,7 @@
           "Fighting",
           "Flying"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/hawlucha.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hawlucha.png",
@@ -33085,7 +33085,7 @@
           "Grass",
           "Fire"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/scovillain.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scovillain.png",
@@ -36977,7 +36977,7 @@
           "Grass",
           "Fighting"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/chesnaught.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/chesnaught.png",
@@ -38203,7 +38203,7 @@
           "Ice",
           "Ghost"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/froslass.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/froslass.png",
@@ -40126,7 +40126,7 @@
           "Ground",
           "Ghost"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/golurk.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/golurk.png",
@@ -40902,7 +40902,7 @@
           "Dark",
           "Ghost"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/absol.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/absol.png",
@@ -41168,7 +41168,7 @@
           "Steel",
           "Flying"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/skarmory.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/skarmory.png",
@@ -42103,7 +42103,7 @@
           "Fire",
           "Fighting"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/emboar.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/emboar.png",
@@ -42898,7 +42898,7 @@
           "Fighting",
           "Ice"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/crabominable.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/crabominable.png",
@@ -46028,7 +46028,7 @@
           "Fire",
           "Psychic"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/delphox.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/delphox.png",
@@ -47655,7 +47655,7 @@
           "Psychic",
           "Steel"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/chimecho.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/chimecho.png",
@@ -48584,7 +48584,7 @@
           "Grass",
           "Poison"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/victreebel.png"
+        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/victreebel-mega.png"
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/victreebel.png",
@@ -49800,7 +49800,7 @@
           "Rock",
           "Fighting"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/barbaracle.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/barbaracle.png",
@@ -50585,7 +50585,7 @@
           "Poison",
           "Dragon"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/dragalge.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/dragalge.png",
@@ -50830,7 +50830,7 @@
         "types": [
           "Electric"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/eelektross.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/eelektross.png",
@@ -51096,7 +51096,7 @@
         "types": [
           "Fighting"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/falinks.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/falinks.png",
@@ -51340,7 +51340,7 @@
           "Water",
           "Dragon"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/feraligatr.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/feraligatr.png",
@@ -52477,7 +52477,7 @@
           "Dark",
           "Psychic"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/malamar.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/malamar.png",
@@ -53005,7 +53005,7 @@
           "Grass",
           "Fairy"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/meganium.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/meganium.png",
@@ -54458,7 +54458,7 @@
           "Fire",
           "Normal"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/pyroar.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pyroar.png",
@@ -55448,7 +55448,7 @@
           "Bug",
           "Poison"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/scolipede.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scolipede.png",
@@ -55696,7 +55696,7 @@
           "Dark",
           "Fighting"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/scrafty.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scrafty.png",
@@ -55973,7 +55973,7 @@
           "Fighting",
           "Flying"
         ],
-        "artwork": "https://play.pokemonshowdown.com/sprites/gen5/staraptor.png"
+        "artwork": ""
       }
     ],
     "sprite": "https://play.pokemonshowdown.com/sprites/gen5/staraptor.png",

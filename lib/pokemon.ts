@@ -177,25 +177,73 @@ export function megaShowdownSlug(formName: string) {
   return formName.toLowerCase().replace(/-mega-([a-z0-9]+)$/, "-mega$1");
 }
 
-function isUsableMegaArtwork(url: string, slug: string, speciesName: string) {
-  const lower = url.toLowerCase();
-  if (lower.includes("/afd/")) return false;
-  if (lower.includes(slug)) return true;
-  if (/mega/i.test(lower)) return true;
+function isBaseSpeciesArtwork(url: string, speciesName: string) {
   const speciesSlug = speciesName.toLowerCase();
-  return !(lower.includes(`/${speciesSlug}.`) || lower.endsWith(`/${speciesSlug}.png`));
+  const lower = url.toLowerCase();
+  return lower.includes(`/${speciesSlug}.`) || lower.endsWith(`/${speciesSlug}.png`);
 }
 
-export function megaFormArtworkUrls(form: MegaForm, data: PokemonData): string[] {
+function isMemeSpriteUrl(url: string) {
+  const lower = url.toLowerCase();
+  return lower.includes("/afd/");
+}
+
+function isUsableMegaArtwork(url: string, slug: string, speciesName: string) {
+  if (isMemeSpriteUrl(url)) return false;
+  const lower = url.toLowerCase();
+  const compactSlug = slug.replace(/[^a-z0-9]/g, "");
+  if (!(lower.includes(compactSlug) || lower.includes(slug))) return false;
+  return !isBaseSpeciesArtwork(url, speciesName);
+}
+
+export function megaFormArtworkUrls(
+  form: MegaForm,
+  data: PokemonData,
+  variant: "sprite" | "artwork" = "artwork",
+): string[] {
   const slug = megaShowdownSlug(form.name);
-  return [
-    form.artwork && isUsableMegaArtwork(form.artwork, slug, data.name) ? form.artwork : undefined,
-    `https://play.pokemonshowdown.com/sprites/dex/${slug}.png`,
+  const baseFallback = variant === "sprite"
+    ? pokemonSprite(data.dex, data.sprite)
+    : pokemonArtwork(data.dex, data.artwork);
+  const showdownFallbacks = [
     `https://play.pokemonshowdown.com/sprites/gen5/${slug}.png`,
-    `https://play.pokemonshowdown.com/sprites/ani/${slug}.png`,
-    pokemonArtwork(data.dex, data.artwork),
-    pokemonSprite(data.dex, data.sprite),
-  ].filter((url, index, list): url is string => !!url && !url.toLowerCase().includes("/afd/") && list.indexOf(url) === index);
+    `https://play.pokemonshowdown.com/sprites/ani/${slug}.gif`,
+  ];
+
+  if (form.artwork && isUsableMegaArtwork(form.artwork, slug, data.name)) {
+    return [form.artwork, ...showdownFallbacks, baseFallback].filter((url, index, list) => !!url && list.indexOf(url) === index);
+  }
+
+  return [...showdownFallbacks, baseFallback];
+}
+
+function normalizeMegaForms(
+  forms: MegaForm[] | undefined,
+  data: Pick<PokemonData, "name" | "sprite">,
+): MegaForm[] {
+  return (forms ?? []).map((form) => {
+    const slug = megaShowdownSlug(form.name);
+    const artwork = form.artwork && isUsableMegaArtwork(form.artwork, slug, data.name)
+      ? form.artwork
+      : "";
+    return { ...form, artwork };
+  });
+}
+
+export function legalAbilitiesForPokemon(data: PokemonData, megaFormName?: string) {
+  const abilities = new Set(data.abilities);
+  for (const form of data.megaForms ?? []) {
+    if (form.ability) abilities.add(form.ability);
+  }
+  if (megaFormName) {
+    const form = data.megaForms?.find((entry) => entry.name === megaFormName);
+    if (form?.ability) abilities.add(form.ability);
+  }
+  return [...abilities];
+}
+
+function legalAbilitiesForBuild(data: PokemonData, build: PokemonBuild) {
+  return legalAbilitiesForPokemon(data, build.megaForm);
 }
 
 const FEATURED_POKEMON: PokemonData[] = [
@@ -289,13 +337,17 @@ const featuredNames = new Set(FEATURED_POKEMON.map((pokemon) => pokemon.name));
 const catalogBySpecies = new Map(championsCatalog.map((pokemon) => [pokemon.name, pokemon]));
 const COMPLETE_CATALOG: PokemonData[] = championsCatalog
   .filter((pokemon) => !featuredNames.has(pokemon.name))
-  .map((pokemon) => ({
-    ...pokemon,
-    sprite: pokemonSprite(pokemon.dex, pokemon.sprite),
-    artwork: pokemonArtwork(pokemon.dex, pokemon.artwork),
-    role: pokemon.usage > 0 ? "Regulation MB contender" : "Regulation MB eligible",
-    summary: "A legal Regulation MB Pokémon with all available moves, abilities, and items.",
-  }));
+  .map((pokemon) => {
+    const sprite = pokemonSprite(pokemon.dex, pokemon.sprite);
+    return {
+      ...pokemon,
+      sprite,
+      artwork: pokemonArtwork(pokemon.dex, pokemon.artwork),
+      megaForms: normalizeMegaForms(pokemon.megaForms, { name: pokemon.name, sprite }),
+      role: pokemon.usage > 0 ? "Regulation MB contender" : "Regulation MB eligible",
+      summary: "A legal Regulation MB Pokémon with all available moves, abilities, and items.",
+    };
+  });
 
 export const POKEMON: PokemonData[] = [
   ...FEATURED_POKEMON.map((pokemon) => {
@@ -307,7 +359,10 @@ export const POKEMON: PokemonData[] = [
       dex: catalogPokemon?.dex ?? pokemon.dex,
       sprite: pokemonSprite(catalogPokemon?.dex ?? pokemon.dex, catalogPokemon?.sprite || pokemon.sprite),
       artwork: pokemonArtwork(catalogPokemon?.dex ?? pokemon.dex, catalogPokemon?.artwork || pokemon.artwork),
-      megaForms: catalogPokemon?.megaForms ?? [],
+      megaForms: normalizeMegaForms(catalogPokemon?.megaForms, {
+        name: pokemon.name,
+        sprite: pokemonSprite(catalogPokemon?.dex ?? pokemon.dex, catalogPokemon?.sprite || pokemon.sprite),
+      }),
       abilities: catalogPokemon?.abilities ?? pokemon.abilities,
       items: catalogPokemon?.items ?? pokemon.items,
       moves: catalogPokemon?.moves ?? pokemon.moves,
@@ -339,7 +394,9 @@ export function validateTeam(team: PokemonBuild[]): ValidationIssue[] {
     const data = POKEMON.find((entry) => entry.name === pokemon.species);
     if (!data) return issues.push({ message: `${pokemon.species} is not supported in this Regulation MB snapshot.`, pokemonId: pokemon.id });
     if (pokemon.item && (itemCounts.get(pokemon.item) ?? 0) > 1) issues.push({ message: `${pokemon.item} is already held by another teammate. VGC uses an item clause.`, pokemonId: pokemon.id });
-    if (pokemon.ability && !data.abilities.includes(pokemon.ability)) issues.push({ message: `${pokemon.ability} is not available to ${pokemon.species}.`, pokemonId: pokemon.id });
+    if (pokemon.ability && !legalAbilitiesForBuild(data, pokemon).includes(pokemon.ability)) {
+      issues.push({ message: `${pokemon.ability} is not available to ${pokemon.species}.`, pokemonId: pokemon.id });
+    }
     if (Object.values(pokemon.evs).some((value) => value > CHAMPIONS_STAT_POINT_MAX)) issues.push({ message: `${pokemon.species} has more than 32 Stat Points in one stat.`, pokemonId: pokemon.id });
     if (Object.values(pokemon.evs).reduce((sum, value) => sum + value, 0) > CHAMPIONS_STAT_POINT_TOTAL) issues.push({ message: `${pokemon.species} has more than 66 total Stat Points assigned.`, pokemonId: pokemon.id });
   });

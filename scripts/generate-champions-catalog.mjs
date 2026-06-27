@@ -26,7 +26,7 @@ async function loadTable(path, exportName) {
   return module.exports[exportName];
 }
 
-const [pokedex, formatsData, learnsets, moves, items, championItems, abilities, moveText, itemText, abilityText, usage, spriteIndex, recentSpriteIndex] = await Promise.all([
+const [pokedex, formatsData, learnsets, moves, items, championItems, abilities, moveText, itemText, abilityText, usage, spriteIndex] = await Promise.all([
   loadTable("data/pokedex.ts", "Pokedex"),
   loadTable("data/mods/champions/formats-data.ts", "FormatsData"),
   loadTable("data/mods/champions/learnsets.ts", "Learnsets"),
@@ -39,7 +39,6 @@ const [pokedex, formatsData, learnsets, moves, items, championItems, abilities, 
   loadTable("data/text/abilities.ts", "AbilitiesText"),
   loadUsage(),
   fetch("https://play.pokemonshowdown.com/sprites/gen5/").then((response) => response.text()),
-  fetch("https://play.pokemonshowdown.com/sprites/afd/").then((response) => response.text()),
 ]);
 
 const lookupName = (table, id) => table[id]?.name || id.replace(/(^|[^a-z])([a-z])/g, (_, prefix, letter) => `${prefix}${letter.toUpperCase()}`);
@@ -50,20 +49,18 @@ const legalItems = alphabetize(Object.entries(mergedItems)
   .map(([id]) => lookupName(items, id)));
 const spriteFiles = [...spriteIndex.matchAll(/href="\.\/([^"]+\.png)"/g)].map((match) => match[1]);
 const normalizedSpriteFiles = new Map(spriteFiles.map((file) => [file.replace(/\.png$/, "").replace(/[^a-z0-9]/g, ""), file]));
-const recentSpriteFiles = [...recentSpriteIndex.matchAll(/href="\.\/([^"]+\.png)"/g)].map((match) => match[1]);
-const normalizedRecentSpriteFiles = new Map(recentSpriteFiles.map((file) => [file.replace(/\.png$/, "").replace(/[^a-z0-9]/g, ""), file]));
 const spriteUrlFor = (name, fallbackName = name) => {
   const file = normalizedSpriteFiles.get(name.toLowerCase().replace(/[^a-z0-9]/g, ""))
     || normalizedSpriteFiles.get(fallbackName.toLowerCase().replace(/[^a-z0-9]/g, ""));
   return file ? `https://play.pokemonshowdown.com/sprites/gen5/${file}` : "";
 };
-const megaSpriteUrlFor = (name, fallbackName) => {
-  const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const currentFile = normalizedSpriteFiles.get(normalizedName);
-  if (currentFile) return `https://play.pokemonshowdown.com/sprites/gen5/${currentFile}`;
-  const recentFile = normalizedRecentSpriteFiles.get(normalizedName);
-  if (recentFile) return `https://play.pokemonshowdown.com/sprites/afd/${recentFile}`;
-  return spriteUrlFor(fallbackName);
+const megaShowdownSlug = (formName) => formName.toLowerCase().replace(/-mega-([a-z0-9]+)$/, "-mega$1");
+const megaSpriteUrlFor = (formName) => {
+  const slug = megaShowdownSlug(formName);
+  const normalizedName = slug.replace(/[^a-z0-9]/g, "");
+  const gen5File = normalizedSpriteFiles.get(normalizedName);
+  if (gen5File) return `https://play.pokemonshowdown.com/sprites/gen5/${gen5File}`;
+  return `https://play.pokemonshowdown.com/sprites/ani/${slug}.gif`;
 };
 const statBlock = (species) => ({
   HP: species.baseStats.hp,
@@ -80,7 +77,7 @@ const megaFormsFor = (species) => Object.values(pokedex)
     stats: statBlock(form),
     ability: Object.values(form.abilities || {})[0] || "",
     types: form.types || species.types,
-    artwork: megaSpriteUrlFor(form.name, species.name),
+    artwork: megaSpriteUrlFor(form.name),
   }));
 
 const catalog = Object.entries(pokedex)

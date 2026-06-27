@@ -22,7 +22,7 @@ import {
   teamHasWeatherSetter,
 } from "../../lib/build-assist";
 import type { BuildAssistPendingAction, BuildAssistSessionControls, BuildAssistTurn } from "../../lib/build-assist-session";
-import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, formatMegaDisplayName, POKEMON, type PokemonBuild, type StatKey } from "../../lib/pokemon";
+import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, formatMegaDisplayName, megaFormArtworkUrls, POKEMON, type PokemonBuild, type StatKey } from "../../lib/pokemon";
 
 const STAT_KEYS: StatKey[] = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"];
 
@@ -501,7 +501,12 @@ function BuildAssistActionCard({ pending, team, selectedId, conversationText = "
         {isSetCard && setCardAction ? (
           <>
             <div className="build-assist-action-art">
-              {pokemon ? <img src={megaForm?.artwork ?? pokemon.sprite} alt="" /> : <Sparkles size={24} />}
+              {pokemon ? (
+                <img
+                  src={(megaForm && pokemon ? megaFormArtworkUrls(megaForm, pokemon, "sprite")[0] : null) ?? pokemon.sprite}
+                  alt=""
+                />
+              ) : <Sparkles size={24} />}
               <div className="build-assist-action-title">
                 <small>{isApplied ? "Applied to team" : streaming ? "Building set…" : "Suggested change"}</small>
                 <strong>{actionLabel(action, pokemon)}</strong>

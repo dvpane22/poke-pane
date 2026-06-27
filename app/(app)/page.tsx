@@ -855,7 +855,7 @@ function PokemonArtImage({ data, megaForm, variant, alt, onError }: {
   const [sourceIndex, setSourceIndex] = useState(0);
   const sources = useMemo(
     () => megaForm
-      ? megaFormArtworkUrls(megaForm, data)
+      ? megaFormArtworkUrls(megaForm, data, variant)
       : [variant === "sprite" ? data.sprite : data.artwork],
     [data, megaForm, variant],
   );
