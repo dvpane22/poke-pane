@@ -40,9 +40,9 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
-import { answerCoachQuestion, applyCoachRecommendation, baseCoachQuestion, CoachAnswer, CoachRecommendation, moveIsSpread } from "../lib/coach";
-import { BuildAssistBubble } from "./components/BuildAssistBubble";
-import { PokeballMark } from "./components/PokeballMark";
+import { answerCoachQuestion, applyCoachRecommendation, baseCoachQuestion, CoachAnswer, CoachRecommendation, moveIsSpread } from "../../lib/coach";
+import { BuildAssistBubble } from "../components/BuildAssistBubble";
+import { PokeballMark } from "../components/PokeballMark";
 import {
   CHAMPIONS_STAT_POINT_MAX,
   CHAMPIONS_STAT_POINT_TOTAL,
@@ -62,9 +62,9 @@ import {
   StatKey,
   BattleStatContext,
   validateTeam,
-} from "../lib/pokemon";
-import { itemSpriteFallbackUrls } from "../lib/item-sprites";
-import optionDetails from "../data/champions-options.json";
+} from "../../lib/pokemon";
+import { itemSpriteFallbackUrls } from "../../lib/item-sprites";
+import optionDetails from "../../data/champions-options.json";
 
 type OptionDetail = {
   description: string;

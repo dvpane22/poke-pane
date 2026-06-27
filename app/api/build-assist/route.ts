@@ -4,10 +4,15 @@ import {
   type BuildAssistMessage,
   type BuildAssistRequest,
 } from "../../../lib/build-assist";
+import { isRequestAuthenticated, unauthorizedJsonResponse } from "../../../lib/require-app-auth";
 
 const MAX_MESSAGES = 16;
 
 export async function POST(request: Request) {
+  if (!(await isRequestAuthenticated())) {
+    return unauthorizedJsonResponse();
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

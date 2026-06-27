@@ -1,7 +1,11 @@
 export const AUTH_COOKIE = "pane-auth";
 
+function readAppPassword() {
+  return process.env.APP_PASSWORD?.trim() ?? "";
+}
+
 export function isAppPasswordEnabled() {
-  return Boolean(process.env.APP_PASSWORD?.trim());
+  return Boolean(readAppPassword());
 }
 
 async function sha256Hex(input: string) {
@@ -13,7 +17,7 @@ async function sha256Hex(input: string) {
 }
 
 export async function authCookieValue() {
-  const password = process.env.APP_PASSWORD?.trim();
+  const password = readAppPassword();
   if (!password) return null;
   return sha256Hex(`pane-auth:${password}`);
 }
