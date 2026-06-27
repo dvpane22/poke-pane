@@ -2,7 +2,6 @@
 
 import { Fragment, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle,
   ArrowUp,
   BarChart2,
   Bug,
@@ -42,11 +41,13 @@ import {
   RotateCcw,
   X,
 } from "lucide-react";
-import { answerCoachQuestion, applyCoachRecommendation, CoachAnswer, CoachRecommendation, CoachSearchScope, coachQuestionWithScope } from "../lib/coach";
+import { answerCoachQuestion, applyCoachRecommendation, baseCoachQuestion, CoachAnswer, CoachRecommendation, moveIsSpread } from "../lib/coach";
+import { BuildAssistBubble } from "./components/BuildAssistBubble";
 import {
   CHAMPIONS_STAT_POINT_MAX,
   CHAMPIONS_STAT_POINT_TOTAL,
   calculateStat,
+  calculateEffectiveStat,
   createBuild,
   exportShowdown,
   getNatureEffect,
@@ -55,8 +56,11 @@ import {
   PokemonBuild,
   PokemonData,
   MegaForm,
+  formatMegaDisplayName,
   megaFormArtworkUrls,
+  resolvePokemonFromDisplayName,
   StatKey,
+  BattleStatContext,
   validateTeam,
 } from "../lib/pokemon";
 import { itemSpriteFallbackUrls } from "../lib/item-sprites";
@@ -88,6 +92,87 @@ const NATURE_CHART = [
   ["Calm", "Gentle", "Careful", "Quirky", "Sassy"],
   ["Timid", "Hasty", "Jolly", "Naive", "Serious"],
 ] as const;
+const STAT_KEYS = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as const satisfies readonly StatKey[];
+
+function sanitizeStatPointDigits(input: string): string {
+  return input.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+}
+
+function normalizeSuggestedEvs(evs?: Partial<Record<StatKey, number>>): PokemonBuild["evs"] | null {
+  if (!evs) return null;
+  const next = { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 } satisfies PokemonBuild["evs"];
+  for (const stat of STAT_KEYS) {
+    const value = evs[stat] ?? 0;
+    if (!Number.isFinite(value) || value < 0 || value > CHAMPIONS_STAT_POINT_MAX) return null;
+    next[stat] = Math.round(value);
+  }
+  const total = Object.values(next).reduce((sum, value) => sum + value, 0);
+  return total <= CHAMPIONS_STAT_POINT_TOTAL ? next : null;
+}
+
+function buildFromSuggestion(data: PokemonData, changes?: Partial<PokemonBuild>) {
+  const base = createBuild(data);
+  const suggestedMoves = changes?.moves?.filter(Boolean).slice(0, 4) ?? [];
+  const suggestedEvs = normalizeSuggestedEvs(changes?.evs);
+
+  return {
+    ...base,
+    item: typeof changes?.item === "string" ? changes.item : base.item,
+    ability: typeof changes?.ability === "string" ? changes.ability : base.ability,
+    nature: typeof changes?.nature === "string" ? changes.nature : base.nature,
+    moves: suggestedMoves.length ? [...suggestedMoves, "", "", "", ""].slice(0, 4) : base.moves,
+    evs: suggestedEvs ?? base.evs,
+  } satisfies PokemonBuild;
+}
+
+function RadarStatPointInput({ stat, value, onCommit }: {
+  stat: StatKey;
+  value: number;
+  onCommit: (value: number) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const safeValue = Number.isFinite(value) ? value : 0;
+
+  const commit = (raw: string) => {
+    const digits = sanitizeStatPointDigits(raw);
+    const parsed = digits === "" ? 0 : Number(digits);
+    onCommit(Number.isFinite(parsed) ? parsed : 0);
+  };
+
+  return (
+    <label className="radar-ev-input">
+      <input
+        aria-label={`${stat} Stat Points`}
+        type="text"
+        inputMode="numeric"
+        value={focused ? draft : String(safeValue)}
+        onFocus={(event) => {
+          setDraft(safeValue > 0 ? String(safeValue) : "");
+          setFocused(true);
+          event.currentTarget.select();
+        }}
+        onChange={(event) => setDraft(sanitizeStatPointDigits(event.target.value))}
+        onBlur={() => {
+          commit(draft);
+          setFocused(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            commit(draft);
+            event.currentTarget.blur();
+          }
+        }}
+      />
+      <span>SP</span>
+      <span className="ev-steppers">
+        <button type="button" aria-label={`Increase ${stat} Stat Points by 1`} onClick={() => onCommit(safeValue + 1)}>▲</button>
+        <button type="button" aria-label={`Decrease ${stat} Stat Points by 1`} onClick={() => onCommit(safeValue - 1)}>▼</button>
+      </span>
+    </label>
+  );
+}
 
 type SavedTeam = {
   id: string;
@@ -194,6 +279,17 @@ export default function Home() {
     setQuery("");
   };
 
+  const addPokemonByName = (pokemonName: string, changes?: Partial<PokemonBuild>) => {
+    const data = POKEMON.find((pokemon) => pokemon.name.toLowerCase() === pokemonName.toLowerCase());
+    if (!data || team.length >= 6) return null;
+    const build = buildFromSuggestion(data, changes);
+    setTeam((current) => current.length >= 6 ? current : [...current, build]);
+    setSelectedId(build.id);
+    setPickerOpen(false);
+    setQuery("");
+    return build.id;
+  };
+
   const updateSelected = (changes: Partial<PokemonBuild>) => {
     if (!selectedId) return;
     setTeam((current) =>
@@ -206,6 +302,12 @@ export default function Home() {
     const next = team.filter((pokemon) => pokemon.id !== selectedId);
     setTeam(next);
     setSelectedId(next[0]?.id ?? null);
+  };
+
+  const removePokemonById = (pokemonId: string) => {
+    const next = team.filter((pokemon) => pokemon.id !== pokemonId);
+    setTeam(next);
+    if (selectedId === pokemonId) setSelectedId(next[0]?.id ?? null);
   };
 
   const applyCoachSpread = (buildId: string, answer: CoachAnswer, recommendation: CoachRecommendation) => {
@@ -351,13 +453,22 @@ export default function Home() {
 
         <section className="editor-area">
           {!selected || !selectedData ? (
-            <EmptyEditor onStart={() => setPickerOpen(true)} />
+            <EmptyEditor
+              team={team}
+              onStart={() => setPickerOpen(true)}
+              addPokemonByName={addPokemonByName}
+              removePokemonById={removePokemonById}
+            />
           ) : (
             <PokemonEditor
               build={selected}
               data={selectedData}
+              team={team}
+              selectedId={selectedId}
               update={updateSelected}
               remove={removeSelected}
+              addPokemonByName={addPokemonByName}
+              removePokemonById={removePokemonById}
             />
           )}
         </section>
@@ -366,7 +477,6 @@ export default function Home() {
       <CoachDrawer
         open={coachOpen}
         setOpen={setCoachOpen}
-        issues={issues}
         team={team}
         selectedId={selectedId}
         applySpread={applyCoachSpread}
@@ -412,18 +522,32 @@ export default function Home() {
           save={saveCurrentTeam}
         />
       )}
+
     </main>
   );
 }
 
-function EmptyEditor({ onStart }: { onStart: () => void }) {
+function EmptyEditor({ team, onStart, addPokemonByName, removePokemonById }: {
+  team: PokemonBuild[];
+  onStart: () => void;
+  addPokemonByName: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  removePokemonById: (pokemonId: string) => void;
+}) {
   return (
     <div className="empty-editor">
       <div className="orbit one" />
       <div className="orbit two" />
       <div className="anchor-orb"><Sparkles size={34} /></div>
       <h1>Add Pokémon</h1>
-      <button className="primary-button large" onClick={onStart}><Plus size={18} /> Add Pokémon</button>
+      <div className="empty-editor-actions">
+        <button className="primary-button large" onClick={onStart}><Plus size={18} /> Add Pokémon</button>
+        <BuildAssistBubble
+          team={team}
+          selectedId={null}
+          onAddPokemon={addPokemonByName}
+          onRemovePokemon={removePokemonById}
+        />
+      </div>
     </div>
   );
 }
@@ -431,13 +555,21 @@ function EmptyEditor({ onStart }: { onStart: () => void }) {
 function PokemonEditor({
   build,
   data,
+  team,
+  selectedId,
   update,
   remove,
+  addPokemonByName,
+  removePokemonById,
 }: {
   build: PokemonBuild;
   data: PokemonData;
+  team: PokemonBuild[];
+  selectedId: string | null;
   update: (changes: Partial<PokemonBuild>) => void;
   remove: () => void;
+  addPokemonByName: (pokemonName: string, changes?: Partial<PokemonBuild>) => string | null;
+  removePokemonById: (pokemonId: string) => void;
 }) {
   const [choice, setChoice] = useState<{ kind: "item" | "ability" | "move"; moveIndex?: number } | null>(null);
   const [natureOpen, setNatureOpen] = useState(false);
@@ -446,11 +578,25 @@ function PokemonEditor({
   const [showStatPreview, setShowStatPreview] = useState(true);
   const [showBaseStats, setShowBaseStats] = useState(false);
   useEffect(() => setArtworkError(false), [data.name, megaForm?.name]);
-  const updateStat = (stat: StatKey, value: number) => {
+  useEffect(() => {
+    if (Object.values(build.evs).every((statValue) => Number.isFinite(statValue))) return;
+    update({
+      evs: Object.fromEntries(
+        Object.entries(build.evs).map(([stat, statValue]) => [stat, Number.isFinite(statValue) ? statValue : 0]),
+      ) as PokemonBuild["evs"],
+    });
+  }, [build.evs, update]);
+  const updateStat = (stat: StatKey, rawValue: number) => {
+    const nextValue = Number.isFinite(rawValue) ? Math.round(rawValue) : 0;
     const used = Object.entries(build.evs)
       .filter(([key]) => key !== stat)
-      .reduce((sum, [, statValue]) => sum + statValue, 0);
-    update({ evs: { ...build.evs, [stat]: Math.max(0, Math.min(CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL - used, Math.round(value))) } });
+      .reduce((sum, [, statValue]) => sum + (Number.isFinite(statValue) ? statValue : 0), 0);
+    update({
+      evs: {
+        ...build.evs,
+        [stat]: Math.max(0, Math.min(CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL - used, nextValue)),
+      },
+    });
   };
 
   return (
@@ -495,7 +641,7 @@ function PokemonEditor({
                 <span>Stat preview</span>
               </button>
               <BaseStatsToggle active={showBaseStats} onToggle={() => setShowBaseStats((value) => !value)} />
-              <span className="ev-budget">{CHAMPIONS_STAT_POINT_TOTAL - Object.values(build.evs).reduce((a, b) => a + b, 0)} Stat Points left</span>
+              <span className="ev-budget">{CHAMPIONS_STAT_POINT_TOTAL - Object.values(build.evs).reduce((sum, statValue) => sum + (Number.isFinite(statValue) ? statValue : 0), 0)} Stat Points left</span>
               <button
                 className="reset-stats"
                 type="button"
@@ -534,6 +680,14 @@ function PokemonEditor({
             <h3 id="nature-heading">Nature</h3>
             <NatureField value={build.nature} onClick={() => setNatureOpen(true)} />
           </section>
+
+          <BuildAssistBubble
+            team={team}
+            selectedId={selectedId}
+            onAddPokemon={addPokemonByName}
+            onRemovePokemon={removePokemonById}
+            onUpdateSelected={update}
+          />
         </div>
       </div>
       {choice && (
@@ -546,6 +700,8 @@ function PokemonEditor({
             if (choice.kind === "item") update({ item: value });
             if (choice.kind === "ability") update({ ability: value });
             if (choice.kind === "move" && choice.moveIndex !== undefined) {
+              const duplicateIndex = build.moves.findIndex((entry, index) => entry === value && index !== choice.moveIndex);
+              if (duplicateIndex >= 0) return;
               const moves = [...build.moves];
               moves[choice.moveIndex] = value;
               update({ moves });
@@ -620,11 +776,28 @@ function PokemonArtImage({ data, megaForm, variant, alt, onError }: {
   );
 }
 
-function MegaToggle({ forms, selected, select }: { forms: MegaForm[]; selected: string | null; select: (name: string | null) => void }) {
+function applyOpponentFormToQuestion(
+  question: string,
+  originalOpponentName: string,
+  nextDisplayName: string,
+  baseSpecies?: string,
+) {
+  if (originalOpponentName === nextDisplayName) return question;
+  const escaped = originalOpponentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(escaped, "gi");
+  if (pattern.test(question)) return question.replace(pattern, nextDisplayName);
+  if (baseSpecies && baseSpecies !== nextDisplayName) {
+    const basePattern = new RegExp(`\\b${baseSpecies.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g");
+    if (basePattern.test(question)) return question.replace(basePattern, nextDisplayName);
+  }
+  return question;
+}
+
+function MegaToggle({ forms, selected, select, compact = false }: { forms: MegaForm[]; selected: string | null; select: (name: string | null) => void; compact?: boolean }) {
   const label = (name: string) => name.split("-").slice(1).join(" ").replace("Mega", "Mega") || "Mega";
   const active = selected !== null;
   return (
-    <div className="mega-toggle-wrap">
+    <div className={`mega-toggle-wrap ${compact ? "compact" : ""}`}>
       {active && forms.length > 1 && (
         <div className="mega-variants" role="group" aria-label="Choose Mega Evolution">
           {forms.map((form) => (
@@ -646,8 +819,8 @@ function MegaToggle({ forms, selected, select }: { forms: MegaForm[]; selected: 
         aria-pressed={active}
         onClick={() => select(active ? null : forms[0].name)}
       >
-        <Sparkles size={11} />
-        <span>Mega preview</span>
+        <Sparkles size={compact ? 10 : 11} />
+        {!compact && <span>Mega preview</span>}
         <i aria-hidden="true"><b /></i>
       </button>
     </div>
@@ -687,13 +860,18 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
   ];
   const point = (index: number, ratio: number) => {
     const angle = -Math.PI / 2 + (index * Math.PI * 2) / 6;
-    return [centerX + Math.cos(angle) * radius * ratio, centerY + Math.sin(angle) * radius * ratio];
+    const safeRatio = Number.isFinite(ratio) ? ratio : minRatio;
+    return [centerX + Math.cos(angle) * radius * safeRatio, centerY + Math.sin(angle) * radius * safeRatio];
   };
-  const evRatio = (ev: number) => minRatio + (ev / CHAMPIONS_STAT_POINT_MAX) * (1 - minRatio);
-  const evRatios = stats.map((stat) => evRatio(build.evs[stat]));
+  const safeEv = (stat: StatKey) => {
+    const ev = build.evs[stat];
+    return Number.isFinite(ev) ? ev : 0;
+  };
+  const evRatio = (ev: number) => minRatio + ((Number.isFinite(ev) ? ev : 0) / CHAMPIONS_STAT_POINT_MAX) * (1 - minRatio);
+  const evRatios = stats.map((stat) => evRatio(safeEv(stat)));
   const polygon = evRatios.map((value, index) => point(index, value).join(",")).join(" ");
   const rawBases = stats.map((stat) => baseStats[stat]);
-  const battleStats = stats.map((stat) => calculateStat(baseStats[stat], build.evs[stat], stat, build.nature));
+  const battleStats = stats.map((stat) => calculateStat(baseStats[stat], safeEv(stat), stat, build.nature));
   const chartMin = Math.min(...rawBases);
   const chartMax = Math.max(
     ...stats.map((stat) => calculateStat(baseStats[stat], CHAMPIONS_STAT_POINT_MAX, stat, build.nature)),
@@ -705,7 +883,7 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
   const previewRatios = showBaseStats ? baseRatios : profileRatios;
   const previewPolygon = previewRatios.map((value, index) => point(index, value).join(",")).join(" ");
   const displayStat = (stat: StatKey) =>
-    showBaseStats ? baseStats[stat] : calculateStat(baseStats[stat], build.evs[stat], stat, build.nature);
+    showBaseStats ? baseStats[stat] : calculateStat(baseStats[stat], safeEv(stat), stat, build.nature);
   const dragStat = (event: React.PointerEvent<SVGCircleElement>, stat: StatKey, index: number) => {
     const svg = event.currentTarget.ownerSVGElement;
     if (!svg) return;
@@ -732,24 +910,11 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
         <div className={`radar-stat-bubble${showBaseStats ? " is-base" : ""}`}>
           <strong>{displayStat(stat)}</strong>
         </div>
-        <label className="radar-ev-input">
-          <input
-            aria-label={`${stat} Stat Points`}
-            type="number"
-            min="0"
-            max={CHAMPIONS_STAT_POINT_MAX}
-            step="1"
-            value={build.evs[stat]}
-            onFocus={(event) => event.currentTarget.select()}
-            onChange={(event) => updateStat(stat, Number(event.target.value))}
-            onBlur={(event) => updateStat(stat, Number(event.target.value))}
-          />
-          <span>SP</span>
-          <span className="ev-steppers">
-            <button type="button" aria-label={`Increase ${stat} Stat Points by 1`} onClick={() => updateStat(stat, build.evs[stat] + 1)}>▲</button>
-            <button type="button" aria-label={`Decrease ${stat} Stat Points by 1`} onClick={() => updateStat(stat, build.evs[stat] - 1)}>▼</button>
-          </span>
-        </label>
+        <RadarStatPointInput
+          stat={stat}
+          value={safeEv(stat)}
+          onCommit={(value) => updateStat(stat, value)}
+        />
       </div>
     );
   };
@@ -798,10 +963,10 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
                 aria-label={`${labels[stat]} Stat Points`}
                 aria-valuemin={0}
                 aria-valuemax={CHAMPIONS_STAT_POINT_MAX}
-                aria-valuenow={build.evs[stat]}
+                aria-valuenow={safeEv(stat)}
                 onKeyDown={(event) => {
-                  if (event.key === "ArrowUp" || event.key === "ArrowRight") updateStat(stat, build.evs[stat] + 1);
-                  if (event.key === "ArrowDown" || event.key === "ArrowLeft") updateStat(stat, build.evs[stat] - 1);
+                  if (event.key === "ArrowUp" || event.key === "ArrowRight") updateStat(stat, safeEv(stat) + 1);
+                  if (event.key === "ArrowDown" || event.key === "ArrowLeft") updateStat(stat, safeEv(stat) - 1);
                 }}
                 onPointerDown={(event) => {
                   event.currentTarget.setPointerCapture(event.pointerId);
@@ -1113,7 +1278,14 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
   const [itemTab, setItemTab] = useState("Recommended");
   const title = choice.kind === "item" ? "Choose a held item" : choice.kind === "ability" ? "Choose an ability" : `Choose move ${(choice.moveIndex ?? 0) + 1}`;
   const current = choice.kind === "item" ? build.item : choice.kind === "ability" ? build.ability : build.moves[choice.moveIndex ?? 0];
-  const options = choice.kind === "item" ? data.items : choice.kind === "ability" ? data.abilities : data.moves;
+  const options = choice.kind === "item"
+    ? data.items
+    : choice.kind === "ability"
+      ? data.abilities
+      : data.moves.filter((move) => {
+        const duplicateIndex = build.moves.findIndex((entry, index) => entry === move && index !== (choice.moveIndex ?? -1));
+        return duplicateIndex < 0;
+      });
   const filtered = options.filter((option) => option.toLowerCase().includes(query.toLowerCase()));
   const pinnedActive = pinned && filtered.includes(pinned) ? pinned : "";
   const active = pinnedActive || focused || (current && filtered.includes(current) ? current : "");
@@ -1380,6 +1552,218 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
 }
 
 const MAX_PINNED_CALCS = 3;
+type GuidedCoachIntent = "ko" | "survive" | "speed";
+
+type InspectorLayoutState = {
+  terrain: string;
+  weather: string;
+  targeting: string;
+  heldItem: string;
+  ability: string;
+  comparedNature: string;
+  criticalHit: string;
+  comparedMegaForm: string | null;
+  comparedStatPoints: PokemonBuild["evs"];
+  trickRoom: string;
+  yourTailwind: string;
+  theirTailwind: string;
+  yourStatStage: string;
+  theirStatStage: string;
+};
+
+function parseStatStage(value: string): number {
+  if (!value) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(-6, Math.min(6, parsed)) : 0;
+}
+
+function inspectorCalcStats(
+  answer: CoachAnswer,
+  range: CoachAnswer["currentRange"] | undefined,
+  moveDetail: OptionDetail | undefined,
+  speedContext: CoachAnswer["speedContext"],
+) {
+  if (speedContext) {
+    return { subjectRelevantStat: "Spe" as StatKey, opponentRelevantStat: "Spe" as StatKey };
+  }
+  const isSpecial = moveDetail?.category === "Special";
+  const attackStat: StatKey = answer.attackStat ?? (isSpecial ? "SpA" : "Atk");
+  const defenseStat: StatKey = answer.defenseStat ?? (isSpecial ? "SpD" : "Def");
+  if (answer.mode === "offensive") {
+    return { subjectRelevantStat: attackStat, opponentRelevantStat: defenseStat };
+  }
+  return { subjectRelevantStat: defenseStat, opponentRelevantStat: attackStat };
+}
+
+function inspectorComparedContext(answer: CoachAnswer, team: PokemonBuild[]) {
+  const range = answer.currentRange;
+  const comparedName = range
+    ? (answer.mode === "offensive" ? range.defenderName : range.attackerName)
+    : answer.speedContext?.opponentName;
+  if (!comparedName) return null;
+  const resolvedCompared = resolvePokemonFromDisplayName(comparedName);
+  if (!resolvedCompared) return null;
+  const comparedBuild = team.find((build) => build.species === resolvedCompared.data.name);
+  const defaultComparedEvs: PokemonBuild["evs"] = {
+    HP: comparedBuild?.evs.HP ?? 0,
+    Atk: comparedBuild?.evs.Atk ?? 0,
+    Def: comparedBuild?.evs.Def ?? 0,
+    SpA: comparedBuild?.evs.SpA ?? 0,
+    SpD: comparedBuild?.evs.SpD ?? 0,
+    Spe: comparedBuild?.evs.Spe ?? 0,
+  };
+  return {
+    comparedName,
+    resolvedCompared,
+    comparedData: resolvedCompared.data,
+    comparedBuild,
+    defaultComparedEvs,
+    opponentKey: resolvedCompared.megaForm?.name ?? resolvedCompared.data.name,
+    opponentLabel: resolvedCompared.megaForm
+      ? formatMegaDisplayName(resolvedCompared.data.name, resolvedCompared.megaForm.name)
+      : resolvedCompared.data.name,
+  };
+}
+
+function buildDefaultInspectorLayout(answer: CoachAnswer, team: PokemonBuild[]): InspectorLayoutState | null {
+  const context = inspectorComparedContext(answer, team);
+  if (!context) return null;
+  const defaultStatPoints = { ...context.defaultComparedEvs };
+  return {
+    terrain: "",
+    weather: "",
+    targeting: "",
+    heldItem: "",
+    ability: "",
+    comparedNature: "",
+    criticalHit: "",
+    comparedMegaForm: context.resolvedCompared.megaForm?.name ?? null,
+    comparedStatPoints: defaultStatPoints,
+    trickRoom: "",
+    yourTailwind: "",
+    theirTailwind: "",
+    yourStatStage: "",
+    theirStatStage: "",
+  };
+}
+
+function getOpponentLayoutKey(answer: CoachAnswer, team: PokemonBuild[]) {
+  return inspectorComparedContext(answer, team)?.opponentKey ?? null;
+}
+
+function buildInspectorLiveQuestion(
+  question: string,
+  answer: CoachAnswer,
+  team: PokemonBuild[],
+  selectedId: string | null,
+  layout: InspectorLayoutState,
+): string {
+  const context = inspectorComparedContext(answer, team);
+  if (!context?.comparedData) return baseCoachQuestion(question);
+
+  const {
+    terrain,
+    weather,
+    targeting,
+    heldItem,
+    ability,
+    comparedNature,
+    criticalHit,
+    comparedMegaForm,
+    comparedStatPoints,
+    trickRoom,
+    yourTailwind,
+    theirTailwind,
+    yourStatStage,
+    theirStatStage,
+  } = layout;
+  const comparedData = context.comparedData;
+  const comparedBuild = context.comparedBuild;
+  const defaultComparedEvs = context.defaultComparedEvs;
+  const activeMegaForm = comparedData.megaForms?.find((form) => form.name === comparedMegaForm) ?? null;
+  const comparedDisplayName = activeMegaForm
+    ? formatMegaDisplayName(comparedData.name, activeMegaForm.name)
+    : comparedData.name;
+  const range = answer.currentRange;
+  const speedContext = answer.speedContext;
+  const moveDetail = range ? OPTION_DETAILS.moves[range.moveName] : undefined;
+  const speedOpponentDefaults = speedContext
+    ? parseSpeedOpponentDefaults(answer, comparedData.name)
+    : null;
+  const assumedDefaults = parseInspectorDefaults(answer, comparedDisplayName);
+  const assumedNature = speedOpponentDefaults?.nature
+    ?? assumedDefaults.nature
+    ?? comparedBuild?.nature
+    ?? "Hardy";
+  const selectedBuild = selectedId ? team.find((build) => build.id === selectedId) : undefined;
+  const subjectName = selectedBuild?.species ?? speedContext?.subjectName ?? "My Pokémon";
+  const { subjectRelevantStat, opponentRelevantStat } = inspectorCalcStats(answer, range, moveDetail, speedContext);
+  const additions: string[] = [];
+  if (terrain) additions.push(terrain === "none" ? "no terrain" : `${terrain} Terrain`);
+  if (weather === "none") additions.push("no weather");
+  else if (weather === "Sun") additions.push("sunny day");
+  else if (weather === "Rain") additions.push("rain dance");
+  else if (weather === "Sand") additions.push("sandstorm");
+  else if (weather === "Snow") additions.push("snow");
+  if (targeting) additions.push(targeting === "single" ? "single target" : "multiple targets");
+  if (criticalHit === "yes") additions.push("on a critical hit");
+  if (comparedNature && comparedNature !== assumedNature) {
+    additions.push(`${comparedData.name} has ${comparedNature} nature`);
+  }
+  if (heldItem) additions.push(`${comparedData.name} holds ${heldItem}`);
+  if (ability) additions.push(`${comparedData.name} has ${ability}`);
+  const changedStats = (["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as StatKey[])
+    .filter((stat) => comparedStatPoints[stat] !== defaultComparedEvs[stat]);
+  if (changedStats.length) {
+    additions.push(`${comparedData.name} has ${changedStats.map((stat) => `${comparedStatPoints[stat]} ${stat} Stat Points`).join(", ")}`);
+  }
+  if (speedContext) {
+    if (trickRoom === "yes") additions.push("under Trick Room");
+    if (yourTailwind === "yes") additions.push("Tailwind on my side");
+    if (theirTailwind === "yes") additions.push(`Tailwind on ${comparedData.name}'s side`);
+    if (yourStatStage) additions.push(`${subjectName} has ${yourStatStage} Spe`);
+    if (theirStatStage) additions.push(`${comparedData.name} has ${theirStatStage} Spe`);
+  } else {
+    if (yourStatStage) additions.push(`${subjectName} has ${yourStatStage} ${subjectRelevantStat}`);
+    if (theirStatStage) additions.push(`${comparedData.name} has ${theirStatStage} ${opponentRelevantStat}`);
+  }
+  const adjustedBaseQuestion = context.comparedName
+    ? applyOpponentFormToQuestion(
+      baseCoachQuestion(question),
+      context.comparedName,
+      comparedDisplayName,
+      comparedData.name,
+    )
+    : baseCoachQuestion(question);
+  if (!additions.length) return adjustedBaseQuestion;
+  return `${adjustedBaseQuestion}. ${additions.join(". ")}.`;
+}
+
+function resolvePinnedCoachCheck(
+  question: string,
+  answer: CoachAnswer,
+  team: PokemonBuild[],
+  selectedId: string | null,
+  layout: InspectorLayoutState | null | undefined,
+) {
+  if (!answer.currentCheck || !layout) return answer.currentCheck;
+  const liveQuestion = buildInspectorLiveQuestion(question, answer, team, selectedId, layout);
+  const liveAnswer = answerCoachQuestion(liveQuestion, team, selectedId);
+  return liveAnswer.currentCheck ?? answer.currentCheck;
+}
+
+function resolvePinnedCoachRange(
+  question: string,
+  answer: CoachAnswer,
+  team: PokemonBuild[],
+  selectedId: string | null,
+  layout: InspectorLayoutState | null | undefined,
+) {
+  if (!answer.currentRange || !layout) return answer.currentRange;
+  const liveQuestion = buildInspectorLiveQuestion(question, answer, team, selectedId, layout);
+  const liveAnswer = answerCoachQuestion(liveQuestion, team, selectedId);
+  return liveAnswer.currentRange ?? answer.currentRange;
+}
 
 function coachRecommendationHeadline(answer: CoachAnswer, recommendation: CoachRecommendation) {
   const scope = answer.searchScope ?? "all";
@@ -1416,15 +1800,19 @@ function CoachCurrentRange({ range, mode }: { range: NonNullable<CoachAnswer["cu
   const width = Math.max(1.5, Math.min(100 - left, (high - low) / scaleMax * 100));
   const oddsLabel = mode === "defensive" ? "Survive" : "KO";
   const tone = range.outcomeChance >= 1 ? "pass" : range.outcomeChance >= 0.5 ? "warn" : "fail";
+  const outcomeCopy = mode === "defensive"
+    ? range.outcomeChance >= 1 ? "Your current build lives every roll." : range.outcomeChance > 0 ? "There are rolls where you hang on." : "This build goes down to every roll."
+    : range.outcomeChance >= 1 ? "This always KOs from here." : range.outcomeChance > 0 ? "Some rolls pick up the KO." : "This never KOs from here.";
   const matchup = mode === "offensive"
     ? `${range.moveName} → ${range.defenderName}`
     : `${range.attackerName}'s ${range.moveName}`;
   return (
     <div className="live-damage-range" aria-label={`Current damage: ${low} to ${high} percent of HP (${damageLow}–${damageHigh} damage)`}>
       <div className="live-damage-copy">
-        <span>{matchup}</span>
+        <span>Live calc</span>
+        <p>{matchup}</p>
         <strong className={tone}>{low}–{high}%</strong>
-        <p>{damageLow}–{damageHigh} damage · {range.targetHp} HP</p>
+        <em>{outcomeCopy}</em>
       </div>
       <div className="damage-range-visual">
         <div className="damage-range-track" aria-hidden="true"><i style={{ left: `${left}%`, width: `${width}%` }} /></div>
@@ -1432,27 +1820,813 @@ function CoachCurrentRange({ range, mode }: { range: NonNullable<CoachAnswer["cu
       </div>
       <div className="live-damage-meta">
         <span><small>{oddsLabel} odds</small><strong>{Math.round(range.outcomeChance * 100)}%</strong></span>
-        <span><small>Target HP</small><strong>{range.targetHp}</strong></span>
-        <span><small>Rolls</small><strong>16</strong></span>
+        <span><small>Damage</small><strong>{damageLow}–{damageHigh}</strong></span>
+        <span><small>HP</small><strong>{range.targetHp}</strong></span>
       </div>
     </div>
   );
 }
 
-function CoachDrawer({ open, setOpen, issues, team, selectedId, applySpread }: {
+function speedOutcomeTone(outcomeLabel?: NonNullable<CoachAnswer["currentCheck"]>["outcomeLabel"]) {
+  if (outcomeLabel === "Faster") return "pass";
+  if (outcomeLabel === "Slower") return "fail";
+  if (outcomeLabel === "Tie") return "warn";
+  return "pass";
+}
+
+function CoachQuickCheckBubble({ check }: { check: NonNullable<CoachAnswer["currentCheck"]> }) {
+  const tone = speedOutcomeTone(check.outcomeLabel);
+  return (
+    <div className="quick-check-card" aria-label={`${check.label}: ${check.title}`}>
+      <div className="quick-check-copy">
+        <span>{check.label}</span>
+        <p>{check.title}</p>
+        <strong className={tone}>{check.outcomeLabel ?? check.value}</strong>
+        {check.outcomeLabel ? <small className="quick-check-speed-stats">{check.value}</small> : null}
+        <em>{check.verdict}</em>
+      </div>
+      <div className="live-damage-meta">
+        {check.meta.map((entry) => (
+          <span key={entry.label}><small>{entry.label}</small><strong>{entry.value}</strong></span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InspectorStatSliders({ data, megaForm, nature, statPoints, setStatPoint, battleContext = {}, getStatStage }: {
+  data: PokemonData;
+  megaForm?: MegaForm | null;
+  nature: string;
+  statPoints: Record<StatKey, number>;
+  setStatPoint: (stat: StatKey, value: number) => void;
+  battleContext?: BattleStatContext;
+  getStatStage?: (stat: StatKey) => number;
+}) {
+  const stats: StatKey[] = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"];
+  const baseStats = megaForm?.stats ?? data.stats;
+  const labelMap: Record<StatKey, string> = { HP: "HP", Atk: "Atk", Def: "Def", SpA: "SpA", SpD: "SpD", Spe: "Spe" };
+  return (
+    <div className="inspector-stat-sliders" aria-label={`${data.name} stat sliders`}>
+      {stats.map((stat) => {
+        const baseValue = calculateStat(baseStats[stat], statPoints[stat], stat, nature);
+        const statStage = getStatStage?.(stat) ?? 0;
+        const value = calculateEffectiveStat(baseStats[stat], statPoints[stat], stat, nature, {
+          ...battleContext,
+          statStage: statStage || undefined,
+        });
+        const boosted = value !== baseValue;
+        const pointPercent = (statPoints[stat] / CHAMPIONS_STAT_POINT_MAX) * 100;
+        return (
+          <label key={stat} className="inspector-stat-slider">
+            <span>{labelMap[stat]}</span>
+            <strong className={boosted ? "boosted" : undefined} title={boosted ? `Base ${baseValue} before item, ability, and field effects` : undefined}>{value}</strong>
+            <div className="inspector-stat-track">
+              <input
+                className="inspector-stat-range"
+                aria-label={`Adjust ${stat} Stat Points`}
+                type="range"
+                min="0"
+                max={CHAMPIONS_STAT_POINT_MAX}
+                value={statPoints[stat]}
+                onChange={(event) => setStatPoint(stat, Number(event.target.value))}
+                style={{ ["--stat-fill" as string]: `${pointPercent}%` }}
+              />
+            </div>
+            <div className="inspector-stat-sp">
+              <input
+                aria-label={`${stat} Stat Points`}
+                type="number"
+                min="0"
+                max={CHAMPIONS_STAT_POINT_MAX}
+                value={statPoints[stat]}
+                onChange={(event) => setStatPoint(stat, Number(event.target.value))}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </div>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function parseSpeedOpponentDefaults(answer: CoachAnswer, opponentName: string) {
+  const line = answer.assumptions.find((entry) => entry.startsWith(`${opponentName}:`));
+  const natureMatch = line?.match(/,\s*(\w+)\s+nature/i);
+  const pointsMatch = line?.match(/:\s*(\d+)\s+Spe/i);
+  return {
+    nature: natureMatch?.[1] || "Hardy",
+    spePoints: pointsMatch ? Number(pointsMatch[1]) : 0,
+  };
+}
+
+function parseInspectorDefaults(answer: CoachAnswer, comparedName: string) {
+  const assumptions = answer.assumptions;
+  const conditionsLine = assumptions.find((entry) => entry.includes("Weather:")) ?? "";
+  const weatherMatch = conditionsLine.match(/Weather:\s*(\w+)/i);
+  const weatherRaw = weatherMatch?.[1]?.toLowerCase() ?? "none";
+  const weather = weatherRaw === "none" ? "none" : weatherRaw.charAt(0).toUpperCase() + weatherRaw.slice(1);
+  const terrainMatch = conditionsLine.match(/Terrain:\s*(?:(\w+) Terrain|none)/i);
+  const terrain = terrainMatch?.[1]
+    ? terrainMatch[1].charAt(0).toUpperCase() + terrainMatch[1].slice(1).toLowerCase()
+    : "none";
+  const targetingLine = assumptions.find((entry) => entry.startsWith("Targeting:")) ?? "";
+  const targeting = targetingLine.includes("multiple Pokémon") ? "multiple" : "single";
+  const pokemonLine = assumptions.find((entry) => entry.includes(comparedName) && entry.includes("Stat Points"));
+  let item = "None";
+  if (pokemonLine) {
+    if (/required Mega Stone/i.test(pokemonLine)) item = "Mega Stone";
+    else if (/no held item/i.test(pokemonLine) || /recommendations may include/i.test(pokemonLine)) item = "None";
+    else {
+      const match = pokemonLine.match(/Stat Points,\s*([^.]+)\./);
+      item = match?.[1]?.trim() || "None";
+    }
+  }
+  const abilityLine = assumptions.find((entry) => entry.startsWith("Abilities:")) ?? "";
+  const abilitySegment = abilityLine.split(";").find((part) => part.includes(comparedName));
+  const abilityMatch = abilitySegment?.match(/—\s*(.+?)\.?\s*$/);
+  const abilityRaw = abilityMatch?.[1]?.trim() || "None";
+  const ability = /^none(\s+specified)?$/i.test(abilityRaw) ? "None" : abilityRaw;
+  const natureMatch = pokemonLine?.match(/Level 50[^:]+:\s*(\w+),/);
+  const nature = natureMatch?.[1] || "Hardy";
+  return { weather, terrain, targeting, item, ability, nature };
+}
+
+function natureModifierHint(nature: string) {
+  for (let rowIndex = 0; rowIndex < NATURE_CHART.length; rowIndex += 1) {
+    const columnIndex = NATURE_CHART[rowIndex].findIndex((entry) => entry === nature);
+    if (columnIndex < 0) continue;
+    if (rowIndex === columnIndex) return "";
+    return `(+${NATURE_STATS[rowIndex]}, -${NATURE_STATS[columnIndex]})`;
+  }
+  return "";
+}
+
+function inspectorNatureLabel(nature: string) {
+  const hint = natureModifierHint(nature);
+  return hint ? `${nature} ${hint}` : nature;
+}
+
+const INSPECTOR_NATURE_OPTIONS = NATURE_CHART.flat().map((nature) => ({
+  value: nature,
+  label: inspectorNatureLabel(nature),
+}));
+
+function SpeedSidePanel({ label, tailwind, trickRoom, onTailwind, onTrickRoom }: {
+  label: string;
+  tailwind: boolean;
+  trickRoom: boolean;
+  onTailwind: (checked: boolean) => void;
+  onTrickRoom: (checked: boolean) => void;
+}) {
+  return (
+    <div className="modifier-stat-stage speed-side-panel">
+      <span>{label}</span>
+      <div className="speed-effect-pills" role="group" aria-label={`${label} speed effects`}>
+        <button
+          type="button"
+          className={`speed-effect-pill${tailwind ? " active" : ""}`}
+          aria-pressed={tailwind}
+          onClick={() => onTailwind(!tailwind)}
+        >
+          Tailwind
+        </button>
+        <button
+          type="button"
+          className={`speed-effect-pill${trickRoom ? " active" : ""}`}
+          aria-pressed={trickRoom}
+          onClick={() => onTrickRoom(!trickRoom)}
+        >
+          Trick Room
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StatStageField({ label, value, onChange }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === "0" || trimmed === "+0" || trimmed === "-0") {
+      onChange("");
+      setDraft("");
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      setDraft(value);
+      return;
+    }
+    const clamped = Math.max(-6, Math.min(6, Math.round(parsed)));
+    const next = clamped === 0 ? "" : clamped > 0 ? `+${clamped}` : `${clamped}`;
+    onChange(next);
+    setDraft(next);
+  };
+  return (
+    <label className="modifier-stat-stage">
+      <span>{label}</span>
+      <div className="modifier-stat-stage-box">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={draft}
+          placeholder="0"
+          aria-label={`${label} stat stage`}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
+          onFocus={(event) => event.currentTarget.select()}
+        />
+      </div>
+    </label>
+  );
+}
+
+function ModifierPicker({ label, value, defaultLabel, options, onChange, disabled = false, mode = "search", menuPlacement = "bottom" }: {
+  label: string;
+  value: string;
+  defaultLabel: string;
+  options: Array<{ value: string; label: string; disabled?: boolean }>;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  mode?: "select" | "search";
+  menuPlacement?: "top" | "bottom";
+}) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value);
+  const [inputValue, setInputValue] = useState(value === "" ? "" : (selected?.label ?? ""));
+  useEffect(() => {
+    setInputValue(value === "" ? "" : (selected?.label ?? ""));
+  }, [selected?.label, value]);
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+  const isShowingDefault = value === "" && !inputValue.trim();
+  const filterQuery = mode === "select" || isShowingDefault ? "" : inputValue.trim().toLowerCase();
+  const visibleOptions = (mode === "select"
+    ? options
+    : filterQuery
+      ? options.filter((option) =>
+        option.label.toLowerCase().includes(filterQuery)
+        || option.value.toLowerCase().includes(filterQuery),
+      )
+      : options
+  )
+    .filter((option) => mode === "select" || !(value === "" && option.label.toLowerCase() === defaultLabel.toLowerCase()))
+    .slice(0, mode === "select" ? options.length : 24);
+  const openPicker = () => {
+    if (!disabled) setOpen(true);
+  };
+  const togglePicker = () => {
+    if (!disabled) setOpen((current) => !current);
+  };
+  const resetToDefault = () => {
+    setInputValue("");
+    onChange("");
+    setOpen(false);
+  };
+  const showResetOption = value !== "";
+  const listOptions = showResetOption
+    ? visibleOptions.filter((option) => option.label.trim().toLowerCase() !== defaultLabel.trim().toLowerCase())
+    : visibleOptions;
+  return (
+    <div className={`modifier-picker ${disabled ? "disabled" : ""} ${mode === "select" ? "select-mode" : ""}`}>
+      <span>{label}</span>
+      <div className="modifier-input-wrap">
+        <input
+          value={inputValue}
+          placeholder={defaultLabel}
+          disabled={disabled}
+          readOnly={disabled || mode === "select"}
+          onFocus={() => {
+            if (disabled) return;
+            if (value === "") setInputValue("");
+            openPicker();
+          }}
+          onClick={mode === "select" ? openPicker : undefined}
+          onBlur={() => window.setTimeout(() => {
+            setOpen(false);
+            if (value === "") setInputValue("");
+          }, 120)}
+          onChange={(event) => {
+            if (disabled || mode === "select") return;
+            const next = event.target.value;
+            setInputValue(next);
+            setOpen(true);
+            const exact = options.find((option) =>
+              option.label.toLowerCase() === next.trim().toLowerCase()
+              || option.value.toLowerCase() === next.trim().toLowerCase(),
+            );
+            if (exact && !exact.disabled) onChange(exact.value);
+            else if (!next.trim()) onChange("");
+          }}
+        />
+        <button
+          type="button"
+          className="modifier-toggle"
+          disabled={disabled}
+          aria-label={`Show ${label} options`}
+          aria-expanded={open}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={togglePicker}
+        >
+          <ChevronDown size={13} />
+        </button>
+      </div>
+      {open && !disabled && (
+        <div className={`modifier-option-list ${menuPlacement === "top" ? "drop-up" : "drop-down"}`} role="listbox">
+          {showResetOption && (
+            <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={resetToDefault}>
+              {defaultLabel}
+            </button>
+          )}
+          {listOptions.map((option) => (
+            <button
+              key={option.value}
+              className={[option.value === value ? "selected" : "", option.disabled ? "disabled" : ""].filter(Boolean).join(" ")}
+              type="button"
+              disabled={option.disabled}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (option.disabled) return;
+                setInputValue(option.label);
+                onChange(option.value);
+                setOpen(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoachCalcInspector({ question, answer, team, selectedId, layout, onLayoutChange, opponentTemplateLabel, showApplyTemplatePrompt, onApplyOpponentTemplate, onDismissApplyTemplatePrompt, onApplySpread, onLivePreview }: {
+  question: string;
+  answer: CoachAnswer;
+  team: PokemonBuild[];
+  selectedId: string | null;
+  layout: InspectorLayoutState;
+  onLayoutChange: (update: Partial<InspectorLayoutState> | ((current: InspectorLayoutState) => InspectorLayoutState)) => void;
+  opponentTemplateLabel?: string;
+  showApplyTemplatePrompt?: boolean;
+  onApplyOpponentTemplate?: () => void;
+  onDismissApplyTemplatePrompt?: () => void;
+  onApplySpread: (buildId: string, answer: CoachAnswer, recommendation: CoachRecommendation) => void;
+  onLivePreview?: (preview: {
+    question: string;
+    range?: NonNullable<CoachAnswer["currentRange"]>;
+    check?: NonNullable<CoachAnswer["currentCheck"]>;
+    mode: CoachAnswer["mode"];
+  } | null) => void;
+}) {
+  const {
+    terrain,
+    weather,
+    targeting,
+    heldItem,
+    ability,
+    comparedNature,
+    criticalHit,
+    comparedMegaForm,
+    comparedStatPoints,
+    trickRoom,
+    yourTailwind,
+    theirTailwind,
+    yourStatStage,
+    theirStatStage,
+  } = layout;
+  const patchLayout = (patch: Partial<InspectorLayoutState>) => onLayoutChange((current) => ({ ...current, ...patch }));
+  const range = answer.currentRange;
+  const speedContext = answer.speedContext;
+  const comparedContext = useMemo(() => inspectorComparedContext(answer, team), [answer, team]);
+  const comparedData = comparedContext?.comparedData;
+  const comparedBuild = comparedContext?.comparedBuild;
+  const defaultComparedEvs = comparedContext?.defaultComparedEvs ?? { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 };
+  const activeMegaForm = comparedData?.megaForms?.find((form) => form.name === comparedMegaForm) ?? null;
+  const comparedDisplayName = activeMegaForm
+    ? formatMegaDisplayName(comparedData!.name, activeMegaForm.name)
+    : comparedData?.name ?? "";
+  const selectedBuild = team.find((build) => build.id === selectedId);
+  const selectedData = POKEMON.find((pokemon) => pokemon.name === selectedBuild?.species);
+  const moveDetail = range ? OPTION_DETAILS.moves[range.moveName] : undefined;
+  const spreadMove = range ? moveIsSpread(range.moveName, moveDetail) : false;
+  const itemOptions = comparedData?.items ?? [];
+  const abilityOptions = useMemo(() => {
+    const options = [...(comparedData?.abilities ?? [])];
+    if (activeMegaForm?.ability && !options.includes(activeMegaForm.ability)) {
+      options.unshift(activeMegaForm.ability);
+    }
+    return options;
+  }, [activeMegaForm?.ability, comparedData?.abilities]);
+  const terrainOptions = [
+    { value: "none", label: "No terrain" },
+    { value: "Electric", label: "Electric" },
+    { value: "Grassy", label: "Grassy" },
+    { value: "Psychic", label: "Psychic" },
+    { value: "Misty", label: "Misty" },
+  ];
+  const weatherOptions = [
+    { value: "none", label: "No weather" },
+    { value: "Sun", label: "Sun" },
+    { value: "Rain", label: "Rain" },
+    { value: "Sand", label: "Sand" },
+    { value: "Snow", label: "Snow" },
+  ];
+  const targetingOptions = [
+    { value: "single", label: "Solo target", disabled: !spreadMove },
+    { value: "multiple", label: "Doubles spread", disabled: !spreadMove },
+  ];
+  const criticalHitOptions = [
+    { value: "no", label: "No crit" },
+    { value: "yes", label: "Critical hit" },
+  ];
+  useEffect(() => {
+    if (!spreadMove && targeting) onLayoutChange((current) => ({ ...current, targeting: "" }));
+  }, [onLayoutChange, spreadMove, targeting]);
+  const setComparedStatPoint = (stat: StatKey, value: number) => {
+    onLayoutChange((current) => ({
+      ...current,
+      comparedStatPoints: {
+        ...current.comparedStatPoints,
+        [stat]: Math.max(0, Math.min(CHAMPIONS_STAT_POINT_MAX, Math.round(value))),
+      },
+    }));
+  };
+  const assumedDefaults = useMemo(
+    () => parseInspectorDefaults(answer, comparedDisplayName),
+    [answer, comparedDisplayName],
+  );
+  const speedOpponentDefaults = speedContext && comparedData
+    ? parseSpeedOpponentDefaults(answer, comparedData.name)
+    : null;
+  const assumedNature = speedOpponentDefaults?.nature
+    ?? assumedDefaults.nature
+    ?? comparedBuild?.nature
+    ?? "Hardy";
+  const effectiveComparedNature = comparedNature || assumedNature;
+  const subjectName = selectedBuild?.species ?? speedContext?.subjectName ?? selectedData?.name ?? "My Pokémon";
+  const { subjectRelevantStat, opponentRelevantStat } = inspectorCalcStats(answer, range, moveDetail, speedContext);
+  const getOpponentStatStage = (stat: StatKey) => {
+    if (stat !== opponentRelevantStat) return 0;
+    let stage = parseStatStage(theirStatStage);
+    if (speedContext && stat === "Spe" && theirTailwind === "yes") stage += 2;
+    return stage;
+  };
+  const modifierAdditions = useMemo(() => {
+    if (!comparedData) return [];
+    const additions: string[] = [];
+    if (terrain) additions.push(terrain === "none" ? "no terrain" : `${terrain} Terrain`);
+    if (weather === "none") additions.push("no weather");
+    else if (weather === "Sun") additions.push("sunny day");
+    else if (weather === "Rain") additions.push("rain dance");
+    else if (weather === "Sand") additions.push("sandstorm");
+    else if (weather === "Snow") additions.push("snow");
+    if (targeting) additions.push(targeting === "single" ? "single target" : "multiple targets");
+    if (criticalHit === "yes") additions.push("on a critical hit");
+    if (comparedNature && comparedNature !== assumedNature) {
+      additions.push(`${comparedData.name} has ${comparedNature} nature`);
+    }
+    if (heldItem) additions.push(`${comparedData.name} holds ${heldItem}`);
+    if (ability) additions.push(`${comparedData.name} has ${ability}`);
+    const changedStats = (["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as StatKey[])
+      .filter((stat) => comparedStatPoints[stat] !== defaultComparedEvs[stat]);
+    if (changedStats.length) {
+      additions.push(`${comparedData.name} has ${changedStats.map((stat) => `${comparedStatPoints[stat]} ${stat} Stat Points`).join(", ")}`);
+    }
+    if (speedContext) {
+      if (trickRoom === "yes") additions.push("under Trick Room");
+      if (yourTailwind === "yes") additions.push("Tailwind on my side");
+      if (theirTailwind === "yes") additions.push(`Tailwind on ${comparedData.name}'s side`);
+      if (yourStatStage) additions.push(`${subjectName} has ${yourStatStage} Spe`);
+      if (theirStatStage) additions.push(`${comparedData.name} has ${theirStatStage} Spe`);
+    } else {
+      if (yourStatStage) additions.push(`${subjectName} has ${yourStatStage} ${subjectRelevantStat}`);
+      if (theirStatStage) additions.push(`${comparedData.name} has ${theirStatStage} ${opponentRelevantStat}`);
+    }
+    return additions;
+  }, [ability, assumedNature, comparedData, comparedNature, comparedStatPoints, criticalHit, defaultComparedEvs, heldItem, opponentRelevantStat, speedContext, subjectName, subjectRelevantStat, targeting, terrain, theirStatStage, theirTailwind, trickRoom, weather, yourStatStage, yourTailwind]);
+  const adjustedBaseQuestion = useMemo(() => {
+    if (!comparedData || !comparedContext?.comparedName) return baseCoachQuestion(question);
+    return applyOpponentFormToQuestion(
+      baseCoachQuestion(question),
+      comparedContext.comparedName,
+      comparedDisplayName,
+      comparedData.name,
+    );
+  }, [comparedContext?.comparedName, comparedData, comparedDisplayName, question]);
+  const liveQuestion = modifierAdditions.length
+    ? `${adjustedBaseQuestion}. ${modifierAdditions.join(". ")}.`
+    : adjustedBaseQuestion;
+  const liveAnswer = useMemo(
+    () => answerCoachQuestion(liveQuestion, team, selectedId),
+    [liveQuestion, selectedId, team],
+  );
+  const liveRange = liveAnswer.currentRange ?? range;
+  const liveCheck = liveAnswer.currentCheck ?? answer.currentCheck;
+  useEffect(() => {
+    if (!onLivePreview) return;
+    if (liveCheck && liveAnswer.ok) {
+      onLivePreview({ question, check: liveCheck, mode: liveAnswer.mode });
+    } else if (liveRange && liveAnswer.ok) {
+      onLivePreview({ question, range: liveRange, mode: liveAnswer.mode });
+    } else {
+      onLivePreview(null);
+    }
+  }, [
+    liveAnswer.currentCheck,
+    liveAnswer.mode,
+    liveAnswer.ok,
+    liveCheck,
+    liveRange,
+    onLivePreview,
+    question,
+  ]);
+  const assumedWeatherLabel = weatherOptions.find((option) => option.value === assumedDefaults.weather)?.label ?? "No weather";
+  const assumedTerrainLabel = terrainOptions.find((option) => option.value === assumedDefaults.terrain)?.label ?? "No terrain";
+  const assumedTargetingLabel = targetingOptions.find((option) => option.value === assumedDefaults.targeting)?.label ?? "Solo target";
+  const inspectorBattleContext = useMemo((): BattleStatContext => {
+    if (!comparedData) return {};
+    return {
+      item: heldItem || (assumedDefaults.item !== "None" ? assumedDefaults.item : ""),
+      ability: ability || (assumedDefaults.ability !== "None" ? assumedDefaults.ability : activeMegaForm?.ability ?? comparedData.abilities[0] ?? ""),
+      weather: weather ? (weather === "none" ? "" : weather) : (assumedDefaults.weather === "none" ? "" : assumedDefaults.weather),
+      terrain: terrain ? (terrain === "none" ? "" : terrain) : (assumedDefaults.terrain === "none" ? "" : assumedDefaults.terrain),
+    };
+  }, [ability, activeMegaForm?.ability, assumedDefaults, comparedData, heldItem, terrain, weather]);
+
+  if (!comparedData || (!range && !speedContext)) {
+    return (
+      <div className="coach-empty">
+        <h3>Select a pinned calc</h3>
+        <p>Pin or select a damage or speed result to inspect the opposing Pokémon, assumptions, and calc modifiers.</p>
+      </div>
+    );
+  }
+
+  const inspectorTitle = speedContext
+    ? `${selectedData?.name ?? "Your Pokémon"} vs ${comparedDisplayName}`
+    : answer.mode === "offensive"
+      ? `${selectedData?.name ?? "Your Pokémon"} into ${comparedDisplayName}`
+      : `${comparedDisplayName} into ${selectedData?.name ?? "your Pokémon"}`;
+
+  return (
+    <div className="calc-inspector" aria-live="polite">
+      {showApplyTemplatePrompt && opponentTemplateLabel ? (
+        <div className="inspector-template-strip" role="status">
+          <p>Apply your saved {opponentTemplateLabel} setup from another calc?</p>
+          <div className="inspector-template-strip-actions">
+            <button type="button" className="ghost-button" onClick={onDismissApplyTemplatePrompt}>Keep defaults</button>
+            <button type="button" className="primary-button" onClick={onApplyOpponentTemplate}>Apply setup</button>
+          </div>
+        </div>
+      ) : null}
+      <section className="inspector-row">
+        <div className="inspector-copy">
+          <span className="eyebrow">{speedContext ? "Speed Inspector" : "Damage Inspector"}</span>
+          <h3>{inspectorTitle}</h3>
+          <p>{liveAnswer.intro || liveAnswer.summary}</p>
+          {liveCheck ? (
+            <CoachQuickCheckBubble check={liveCheck} />
+          ) : liveRange ? (
+            <CoachCurrentRange range={liveRange} mode={liveAnswer.mode} />
+          ) : null}
+        </div>
+
+        <div className="inspector-pokemon-card">
+          <div className="inspector-art-wrap">
+            <PokemonArtImage
+              data={comparedData}
+              megaForm={activeMegaForm}
+              variant="artwork"
+              alt={comparedDisplayName}
+            />
+          </div>
+          <div className="inspector-pokemon-body">
+            <div className="inspector-pokemon-head">
+              <span className="eyebrow">Opposing Pokémon</span>
+              <div className="inspector-pokemon-main-row">
+                <div className="inspector-pokemon-title-row">
+                  <h4 title={comparedDisplayName}>{comparedDisplayName}</h4>
+                  {comparedData.megaForms?.length ? (
+                    <MegaToggle
+                      forms={comparedData.megaForms}
+                      selected={comparedMegaForm}
+                      select={(megaForm) => patchLayout({ comparedMegaForm: megaForm })}
+                      compact
+                    />
+                  ) : null}
+                </div>
+                <div className="inspector-build-pickers">
+                  <ModifierPicker label="Nature" value={comparedNature} defaultLabel={inspectorNatureLabel(assumedNature)} options={INSPECTOR_NATURE_OPTIONS} onChange={(value) => patchLayout({ comparedNature: value })} />
+                  <ModifierPicker label="Item" value={heldItem} defaultLabel={assumedDefaults.item} options={itemOptions.map((item) => ({ value: item, label: item }))} onChange={(value) => patchLayout({ heldItem: value })} />
+                  <ModifierPicker label="Ability" value={ability} defaultLabel={assumedDefaults.ability} options={abilityOptions.map((option) => ({ value: option, label: option }))} onChange={(value) => patchLayout({ ability: value })} />
+                </div>
+              </div>
+              <div className="inspector-type-row">
+                {(activeMegaForm?.types ?? comparedData.types).map((type) => (
+                  <span className="inspector-type-chip" key={type}>{type}</span>
+                ))}
+              </div>
+            </div>
+            <InspectorStatSliders
+              data={comparedData}
+              megaForm={activeMegaForm}
+              nature={effectiveComparedNature}
+              statPoints={comparedStatPoints}
+              setStatPoint={setComparedStatPoint}
+              battleContext={inspectorBattleContext}
+              getStatStage={getOpponentStatStage}
+            />
+          </div>
+        </div>
+
+        <div className="inspector-modifiers">
+          <div className="inspector-panel-head">
+            <span className="eyebrow">Try Modifiers</span>
+            <strong>Live</strong>
+          </div>
+          <div className="modifier-grid">
+            <ModifierPicker label="Weather" value={weather} defaultLabel={assumedWeatherLabel} options={weatherOptions} onChange={(value) => patchLayout({ weather: value })} mode="select" />
+            <ModifierPicker label="Terrain" value={terrain} defaultLabel={assumedTerrainLabel} options={terrainOptions} onChange={(value) => patchLayout({ terrain: value })} mode="select" />
+            {!speedContext ? (
+              <>
+                <ModifierPicker label="Targeting" value={targeting} defaultLabel={assumedTargetingLabel} options={targetingOptions} onChange={(value) => patchLayout({ targeting: value })} disabled={!spreadMove} mode="select" />
+                <ModifierPicker label="Critical hit" value={criticalHit} defaultLabel="No crit" options={criticalHitOptions} onChange={(value) => patchLayout({ criticalHit: value })} mode="select" />
+              </>
+            ) : null}
+          </div>
+          {speedContext ? (
+            <div className="modifier-section">
+              <span className="modifier-section-label">Speed</span>
+              <div className="modifier-grid modifier-grid-speed-block">
+                <SpeedSidePanel
+                  label="Your side"
+                  tailwind={yourTailwind === "yes"}
+                  trickRoom={trickRoom === "yes"}
+                  onTailwind={(checked) => patchLayout({ yourTailwind: checked ? "yes" : "" })}
+                  onTrickRoom={(checked) => patchLayout({ trickRoom: checked ? "yes" : "" })}
+                />
+                <SpeedSidePanel
+                  label="Their side"
+                  tailwind={theirTailwind === "yes"}
+                  trickRoom={trickRoom === "yes"}
+                  onTailwind={(checked) => patchLayout({ theirTailwind: checked ? "yes" : "" })}
+                  onTrickRoom={(checked) => patchLayout({ trickRoom: checked ? "yes" : "" })}
+                />
+                <StatStageField
+                  label="Your Spe"
+                  value={yourStatStage}
+                  onChange={(value) => patchLayout({ yourStatStage: value })}
+                />
+                <StatStageField
+                  label="Their Spe"
+                  value={theirStatStage}
+                  onChange={(value) => patchLayout({ theirStatStage: value })}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="modifier-section">
+              <span className="modifier-section-label">Stat stages</span>
+              <div className="modifier-grid modifier-grid-stages">
+                <StatStageField
+                  label={`Your ${subjectRelevantStat}`}
+                  value={yourStatStage}
+                  onChange={(value) => patchLayout({ yourStatStage: value })}
+                />
+                <StatStageField
+                  label={`Their ${opponentRelevantStat}`}
+                  value={theirStatStage}
+                  onChange={(value) => patchLayout({ theirStatStage: value })}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {!liveAnswer.awaitingScope && liveAnswer.recommendations.length > 0 && (
+        <div className="inspector-recommendations">
+          <div className="inspector-panel-head">
+            <span className="eyebrow">Recommended Builds</span>
+            <strong>Ways to change your side</strong>
+          </div>
+          <div className="survival-grid">
+            {liveAnswer.recommendations.map((recommendation) => (
+              <article className="survival-card" key={`${recommendation.nature}-${recommendation.item}-${recommendation.hpPoints}-${recommendation.defensePoints}-${recommendation.attackPoints}`}>
+                <div className="survival-card-heading">
+                  <span>{recommendation.label}</span>
+                  <strong>{Math.round(recommendation.outcomeChance * 100)}%</strong>
+                </div>
+                <h4>{coachRecommendationHeadline(liveAnswer, recommendation)}</h4>
+                <p>{coachRecommendationDetail(liveAnswer, recommendation)}</p>
+                {liveAnswer.targetBuildId && (
+                  <button className="apply-spread" type="button" onClick={() => onApplySpread(liveAnswer.targetBuildId!, liveAnswer, recommendation)}>
+                    Apply this spread
+                  </button>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
   open: boolean;
   setOpen: (open: boolean) => void;
-  issues: ReturnType<typeof validateTeam>;
   team: PokemonBuild[];
   selectedId: string | null;
   applySpread: (buildId: string, answer: CoachAnswer, recommendation: CoachRecommendation) => void;
 }) {
-  const defensiveExample = "How can I build Staraptor to survive a +SpA nature, max SpA Raichu using Thunderbolt?";
-  const offensiveExample = "Can this kill a Raichu with Brave Bird in rain and Electric Terrain?";
-  const [question, setQuestion] = useState("");
   const [submittedQuestion, setSubmittedQuestion] = useState("");
   const [pinnedQuestions, setPinnedQuestions] = useState<string[]>([]);
-  const [conversation, setConversation] = useState<Array<{ prompt: string; resolvedQuestion: string; usedContext: boolean }>>([]);
+  const [selectedPinnedQuestion, setSelectedPinnedQuestion] = useState("");
+  const [guidedIntent, setGuidedIntent] = useState<GuidedCoachIntent>("ko");
+  const [guidedOpponent, setGuidedOpponent] = useState("");
+  const [guidedMove, setGuidedMove] = useState("");
+  const [focusedGuideField, setFocusedGuideField] = useState<"opponent" | "move" | null>(null);
+  const selectedBuild = team.find((build) => build.id === selectedId);
+  const selectedPokemon = POKEMON.find((pokemon) => pokemon.name === selectedBuild?.species);
+  const guidedOpponentResolved = useMemo(
+    () => (guidedOpponent.trim() ? resolvePokemonFromDisplayName(guidedOpponent.trim()) : null),
+    [guidedOpponent],
+  );
+  const guidedOpponentData = guidedOpponentResolved?.data ?? null;
+  const guidedOpponentName = guidedOpponentResolved
+    ? guidedOpponentResolved.megaForm
+      ? formatMegaDisplayName(guidedOpponentResolved.data.name, guidedOpponentResolved.megaForm.name)
+      : guidedOpponentResolved.data.name
+    : "";
+  const selectedMoveOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return (selectedBuild?.moves.filter(Boolean) ?? []).filter((move) => {
+      if (seen.has(move)) return false;
+      seen.add(move);
+      return true;
+    });
+  }, [selectedBuild]);
+  const selectedMoveSet = useMemo(() => new Set(selectedMoveOptions), [selectedMoveOptions]);
+  const currentMoveOptions = useMemo(() => {
+    const learnedMoves = selectedPokemon?.moves ?? [];
+    return [
+      ...selectedMoveOptions,
+      ...learnedMoves.filter((move) => !selectedMoveSet.has(move)),
+    ];
+  }, [selectedMoveOptions, selectedMoveSet, selectedPokemon]);
+  const opponentMoveOptions = guidedOpponentData?.moves ?? [];
+  const guidedMoveOptions = guidedIntent === "survive" ? opponentMoveOptions : currentMoveOptions;
+  const guidedNeedsMove = guidedIntent !== "speed";
+  const guidedMoveIsValid = !guidedNeedsMove || guidedMoveOptions.some((move) => move.toLowerCase() === guidedMove.trim().toLowerCase());
+  const guidedCanAsk = Boolean(selectedPokemon && guidedOpponentData && guidedMoveIsValid);
+  const selectedGuidedMove = guidedMoveOptions.find((move) => move.toLowerCase() === guidedMove.trim().toLowerCase());
+  const opponentSuggestions = useMemo(() => {
+    const query = guidedOpponent.trim().toLowerCase();
+    if (!query) return [];
+    const results: Array<{ key: string; label: string }> = [];
+    for (const pokemon of POKEMON) {
+      if (pokemon.name.toLowerCase().includes(query)) {
+        results.push({ key: pokemon.name, label: pokemon.name });
+      }
+      for (const form of pokemon.megaForms ?? []) {
+        const label = formatMegaDisplayName(pokemon.name, form.name);
+        if (label.toLowerCase().includes(query) || pokemon.name.toLowerCase().includes(query)) {
+          results.push({ key: form.name, label });
+        }
+      }
+    }
+    return results.slice(0, 10);
+  }, [guidedOpponent]);
+  const moveSuggestions = useMemo(() => {
+    const query = guidedMove.trim().toLowerCase();
+    if (!guidedNeedsMove) return [];
+    return guidedMoveOptions
+      .filter((move) => !query || move.toLowerCase().includes(query));
+  }, [guidedMove, guidedMoveOptions, guidedNeedsMove]);
+  const showOpponentSuggestions = opponentSuggestions.length > 0 && !guidedOpponentResolved && (focusedGuideField === "opponent" || Boolean(guidedOpponent.trim()));
+  const showMoveSuggestions = moveSuggestions.length > 0 && (focusedGuideField === "move" || (Boolean(guidedMove.trim()) && !selectedGuidedMove));
+  useEffect(() => {
+    if (!guidedNeedsMove) setGuidedMove("");
+  }, [guidedNeedsMove]);
+  useEffect(() => {
+    setGuidedMove("");
+  }, [guidedIntent, guidedOpponentName, selectedId]);
   const answer = useMemo(
     () => submittedQuestion ? answerCoachQuestion(submittedQuestion, team, selectedId) : null,
     [submittedQuestion, team, selectedId],
@@ -1464,60 +2638,125 @@ function CoachDrawer({ open, setOpen, issues, team, selectedId, applySpread }: {
     })),
     [pinnedQuestions, team, selectedId],
   );
-  const runQuestion = (rawPrompt: string) => {
-    const prompt = rawPrompt.trim();
-    if (!prompt) return;
-    const previousTurn = conversation[conversation.length - 1];
-    const directAnswer = answerCoachQuestion(prompt, team, selectedId);
-    const usedContext = directAnswer.assumptions.length === 0 && Boolean(previousTurn);
-    const resolvedQuestion = usedContext
-      ? `${previousTurn.resolvedQuestion}\nFollow-up constraint: ${prompt}`
-      : prompt;
-    setConversation((current) => [...current, { prompt, resolvedQuestion, usedContext }]);
-    setSubmittedQuestion(resolvedQuestion);
-    setQuestion("");
-    setOpen(true);
+  const selectedPinnedCalc = useMemo(
+    () => pinnedCalcs.find((calc) => calc.question === selectedPinnedQuestion),
+    [pinnedCalcs, selectedPinnedQuestion],
+  );
+  const inspectorQuestion = selectedPinnedCalc?.question ?? submittedQuestion;
+  const inspectorAnswer = selectedPinnedCalc?.answer ?? answer;
+  const [layoutByQuestion, setLayoutByQuestion] = useState<Record<string, InspectorLayoutState>>({});
+  const [templateByOpponent, setTemplateByOpponent] = useState<Record<string, InspectorLayoutState>>({});
+  const [dismissedTemplateForQuestion, setDismissedTemplateForQuestion] = useState<Record<string, boolean>>({});
+  const [inspectorLivePreview, setInspectorLivePreview] = useState<{
+    question: string;
+    range?: NonNullable<CoachAnswer["currentRange"]>;
+    check?: NonNullable<CoachAnswer["currentCheck"]>;
+    mode: CoachAnswer["mode"];
+  } | null>(null);
+  const inspectorDefaultLayout = useMemo(
+    () => (inspectorAnswer ? buildDefaultInspectorLayout(inspectorAnswer, team) : null),
+    [inspectorAnswer, team],
+  );
+  const inspectorOpponentKey = useMemo(
+    () => (inspectorAnswer ? getOpponentLayoutKey(inspectorAnswer, team) : null),
+    [inspectorAnswer, team],
+  );
+  const inspectorLayout = useMemo(
+    () => (inspectorQuestion && inspectorDefaultLayout
+      ? layoutByQuestion[inspectorQuestion] ?? inspectorDefaultLayout
+      : null),
+    [inspectorDefaultLayout, inspectorQuestion, layoutByQuestion],
+  );
+  const showApplyTemplatePrompt = Boolean(
+    inspectorQuestion
+    && inspectorOpponentKey
+    && inspectorDefaultLayout
+    && !layoutByQuestion[inspectorQuestion]
+    && templateByOpponent[inspectorOpponentKey]
+    && !dismissedTemplateForQuestion[inspectorQuestion]
+    && pinnedCalcs.filter((calc) => getOpponentLayoutKey(calc.answer, team) === inspectorOpponentKey).length > 1,
+  );
+  const inspectorOpponentLabel = useMemo(
+    () => (inspectorAnswer ? inspectorComparedContext(inspectorAnswer, team)?.opponentLabel : undefined),
+    [inspectorAnswer, team],
+  );
+  const handleInspectorLayoutChange = (
+    update: Partial<InspectorLayoutState> | ((current: InspectorLayoutState) => InspectorLayoutState),
+  ) => {
+    if (!inspectorQuestion || !inspectorDefaultLayout || !inspectorOpponentKey) return;
+    setLayoutByQuestion((current) => {
+      const previous = current[inspectorQuestion] ?? inspectorDefaultLayout;
+      const next = typeof update === "function" ? update(previous) : { ...previous, ...update };
+      setTemplateByOpponent((templates) => ({ ...templates, [inspectorOpponentKey]: next }));
+      return { ...current, [inspectorQuestion]: next };
+    });
   };
-  const submitQuestion = () => runQuestion(question);
-  const ask = (event: FormEvent) => {
+  const applyOpponentTemplate = () => {
+    if (!inspectorQuestion || !inspectorOpponentKey || !templateByOpponent[inspectorOpponentKey] || !inspectorDefaultLayout) return;
+    const template = templateByOpponent[inspectorOpponentKey];
+    setLayoutByQuestion((current) => ({
+      ...current,
+      [inspectorQuestion]: {
+        ...template,
+        comparedMegaForm: template.comparedMegaForm ?? inspectorDefaultLayout.comparedMegaForm,
+      },
+    }));
+    setDismissedTemplateForQuestion((current) => ({ ...current, [inspectorQuestion]: true }));
+  };
+  useEffect(() => {
+    setInspectorLivePreview(null);
+  }, [inspectorQuestion]);
+  const pinResolvedQuestion = (resolvedQuestion: string, replaceOldest = false) => {
+    const pinnedAnswer = answerCoachQuestion(resolvedQuestion, team, selectedId);
+    if (!pinnedAnswer.currentRange && !pinnedAnswer.currentCheck) return false;
+    setPinnedQuestions((current) => {
+      if (current.includes(resolvedQuestion)) return current;
+      const next = replaceOldest && current.length >= MAX_PINNED_CALCS
+        ? current.slice(1)
+        : current;
+      if (next.length >= MAX_PINNED_CALCS) return next;
+      return [...next, resolvedQuestion];
+    });
+    setSelectedPinnedQuestion(resolvedQuestion);
+    return true;
+  };
+  const askGuidedQuestion = () => {
+    if (!selectedPokemon || !guidedOpponentData) return;
+    let resolvedQuestion: string;
+    if (guidedIntent === "ko") {
+      const move = guidedMoveOptions.find((option) => option.toLowerCase() === guidedMove.trim().toLowerCase());
+      if (!move) return;
+      resolvedQuestion = `Can ${selectedPokemon.name} KO ${guidedOpponentName} with ${move}?`;
+    } else if (guidedIntent === "survive") {
+      const move = guidedMoveOptions.find((option) => option.toLowerCase() === guidedMove.trim().toLowerCase());
+      if (!move) return;
+      resolvedQuestion = `Can ${selectedPokemon.name} survive ${guidedOpponentName}'s ${move}?`;
+    } else {
+      resolvedQuestion = `Can ${selectedPokemon.name} outspeed ${guidedOpponentName}?`;
+    }
+    pinResolvedQuestion(resolvedQuestion, true);
+  };
+  const submitGuidedQuestion = (event: FormEvent) => {
     event.preventDefault();
-    submitQuestion();
-  };
-  const handleQuestionKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter" || event.shiftKey) return;
-    event.preventDefault();
-    submitQuestion();
-  };
-  const useExample = (example: string) => {
-    runQuestion(example);
-  };
-  const latestTurn = conversation[conversation.length - 1];
-  const earlierTurns = conversation.slice(Math.max(0, conversation.length - 4), -1);
-  const isPinned = Boolean(submittedQuestion && pinnedQuestions.includes(submittedQuestion));
-  const pinSlotsFull = pinnedQuestions.length >= MAX_PINNED_CALCS;
-  const pinCurrentCalc = () => {
-    if (!submittedQuestion || !answer?.currentRange || isPinned || pinSlotsFull) return;
-    setPinnedQuestions((current) => [...current, submittedQuestion]);
+    askGuidedQuestion();
   };
   const unpinCalc = (question: string) => {
     setPinnedQuestions((current) => current.filter((entry) => entry !== question));
+    if (selectedPinnedQuestion === question) setSelectedPinnedQuestion("");
+    setLayoutByQuestion((current) => {
+      const { [question]: removed, ...rest } = current;
+      void removed;
+      return rest;
+    });
+    setDismissedTemplateForQuestion((current) => {
+      const { [question]: removed, ...rest } = current;
+      void removed;
+      return rest;
+    });
   };
-  const togglePinCurrentCalc = () => {
-    if (!submittedQuestion || !answer?.currentRange) return;
-    if (isPinned) unpinCalc(submittedQuestion);
-    else pinCurrentCalc();
-  };
-  const applyScope = (scope: CoachSearchScope) => {
-    if (!submittedQuestion) return;
-    const resolved = coachQuestionWithScope(submittedQuestion, scope);
-    const label = {
-      stats: "Stat points only",
-      nature: "Different nature",
-      item: "Held item",
-      all: "Search everything",
-    }[scope];
-    setConversation((current) => [...current, { prompt: label, resolvedQuestion: resolved, usedContext: true }]);
-    setSubmittedQuestion(resolved);
+  const inspectPinnedCalc = (question: string) => {
+    setSelectedPinnedQuestion(question);
+    setSubmittedQuestion(question);
     setOpen(true);
   };
   return (
@@ -1527,178 +2766,168 @@ function CoachDrawer({ open, setOpen, issues, team, selectedId, applySpread }: {
           <span className="coach-avatar"><Sparkles size={17} /></span>
           <span className="sr-only">Pane Coach</span>
         </button>
-        <form className="coach-ask-bar" onSubmit={ask}>
-          <label className="sr-only" htmlFor="coach-question">Ask Pane Coach about a damage matchup</label>
-          <input
-            id="coach-question"
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={handleQuestionKeyDown}
-            placeholder={answer ? "Ask a follow-up about this matchup..." : "Ask Pane Coach about this build..."}
-            autoComplete="off"
-          />
-          <button type="submit" aria-label="Ask Pane Coach" disabled={!question.trim()}><ArrowUp size={16} /></button>
-        </form>
-        {pinnedCalcs.some(({ answer: pinnedAnswer }) => pinnedAnswer.currentRange) && (
-          <div className="coach-pin-stack" aria-label={`${pinnedCalcs.length} pinned damage calcs`}>
-            {pinnedCalcs.map(({ question, answer: pinnedAnswer }) => pinnedAnswer.currentRange ? (
-              <PinnedDamageVis
-                key={question}
-                range={pinnedAnswer.currentRange}
-                mode={pinnedAnswer.mode}
-                title={pinnedAnswer.title}
-                onUnpin={() => unpinCalc(question)}
-              />
-            ) : null)}
+        <form className="coach-strip-guide" data-intent={guidedIntent} onSubmit={submitGuidedQuestion} aria-label="Guided Pane Coach question builder">
+          <div className="coach-strip-intents" role="group" aria-label="Choose what Pane Coach should check">
+            {([
+              ["ko", "KO"],
+              ["survive", "Live"],
+              ["speed", "Faster"],
+            ] as const).map(([intent, label]) => (
+              <button
+                key={intent}
+                className={guidedIntent === intent ? "active" : ""}
+                type="button"
+                onClick={() => setGuidedIntent(intent)}
+                aria-pressed={guidedIntent === intent}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-        )}
-        {issues.length > 0 && <span className="issue-count"><AlertTriangle size={14} /> {issues.length}</span>}
+          <label className="coach-strip-field coach-autocomplete-field">
+            <span>Opponent</span>
+            <input
+              value={guidedOpponent}
+              onChange={(event) => {
+                setGuidedOpponent(event.target.value);
+                setFocusedGuideField("opponent");
+              }}
+              onFocus={() => setFocusedGuideField("opponent")}
+              onBlur={() => setFocusedGuideField(null)}
+              placeholder="Choose..."
+              autoComplete="off"
+            />
+            {showOpponentSuggestions && (
+              <div className="coach-suggest-list" role="listbox">
+                {opponentSuggestions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setGuidedOpponent(option.label);
+                      setFocusedGuideField(null);
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </label>
+          {guidedNeedsMove ? (
+            <label className="coach-strip-field coach-autocomplete-field">
+              <span>{guidedIntent === "survive" ? "Their move" : "Your move"}</span>
+              <input
+                value={guidedMove}
+                onChange={(event) => {
+                  setGuidedMove(event.target.value);
+                  setFocusedGuideField("move");
+                }}
+                onFocus={(event) => {
+                  setFocusedGuideField("move");
+                  event.currentTarget.select();
+                }}
+                onBlur={() => setFocusedGuideField(null)}
+                placeholder={guidedIntent === "survive" ? "Type foe move..." : "Type move..."}
+                disabled={!guidedMoveOptions.length}
+                autoComplete="off"
+              />
+              {showMoveSuggestions && (
+                <div className="coach-suggest-list coach-move-suggest-list" role="listbox">
+                  {moveSuggestions.map((move) => (
+                    <button
+                      key={move}
+                      className={guidedIntent !== "survive" && selectedMoveSet.has(move) ? "pinned" : ""}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setGuidedMove(move);
+                        setFocusedGuideField(null);
+                      }}
+                    >
+                      <span>{move}</span>
+                      {guidedIntent !== "survive" && selectedMoveSet.has(move) && <small>Set</small>}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!guidedMoveOptions.length && (
+                <small>{guidedIntent === "survive" ? "Pick foe first" : "No move"}</small>
+              )}
+            </label>
+          ) : null}
+          <button className="coach-strip-submit" type="submit" aria-label="Ask Pane Coach" disabled={!guidedCanAsk}><ArrowUp size={16} /></button>
+        </form>
+        <div className={`coach-pin-stack ${pinnedCalcs.some(({ answer: pinnedAnswer }) => pinnedAnswer.currentRange || pinnedAnswer.currentCheck) ? "" : "empty"}`} aria-label={`${pinnedCalcs.length} pinned coach results`}>
+          {pinnedCalcs.some(({ answer: pinnedAnswer }) => pinnedAnswer.currentRange || pinnedAnswer.currentCheck) ? (
+            pinnedCalcs.map(({ question, answer: pinnedAnswer }) => {
+              const pinLayout = layoutByQuestion[question] ?? buildDefaultInspectorLayout(pinnedAnswer, team);
+              return pinnedAnswer.currentRange ? (
+                <PinnedDamageVis
+                  key={question}
+                  range={
+                    (question === inspectorQuestion && inspectorLivePreview?.question === question && inspectorLivePreview.range)
+                      ? inspectorLivePreview.range
+                      : resolvePinnedCoachRange(question, pinnedAnswer, team, selectedId, pinLayout)
+                      ?? pinnedAnswer.currentRange!
+                  }
+                  mode={
+                    question === inspectorQuestion && inspectorLivePreview?.question === question
+                      ? inspectorLivePreview.mode
+                      : pinnedAnswer.mode
+                  }
+                  title={pinnedAnswer.title}
+                  selected={question === inspectorQuestion}
+                  onSelect={() => inspectPinnedCalc(question)}
+                  onUnpin={() => unpinCalc(question)}
+                />
+              ) : pinnedAnswer.currentCheck ? (
+                <PinnedCheckVis
+                  key={question}
+                  check={
+                    (question === inspectorQuestion && inspectorLivePreview?.question === question && inspectorLivePreview.check)
+                      ? inspectorLivePreview.check
+                      : resolvePinnedCoachCheck(question, pinnedAnswer, team, selectedId, pinLayout)
+                      ?? pinnedAnswer.currentCheck
+                  }
+                  selected={question === inspectorQuestion}
+                  onSelect={() => inspectPinnedCalc(question)}
+                  onUnpin={() => unpinCalc(question)}
+                />
+              ) : null;
+            })
+          ) : (
+            <span className="coach-pin-empty">Pinned calcs</span>
+          )}
+        </div>
         <button className="expand-coach" type="button" onClick={() => setOpen(!open)} aria-label={open ? "Close Pane Coach" : "Open Pane Coach"}>{open ? <ChevronDown size={18} /> : <ChevronUp size={18} />}</button>
       </div>
       <div className="coach-content">
         <div className="coach-column coach-conversation">
-          {!answer ? (
+          {!inspectorAnswer || !inspectorQuestion ? (
             <div className="coach-empty">
-              <h3>Let&apos;s talk damage</h3>
-              <p>Ask whether you survive a hit or land a KO. Selected abilities and field conditions are included. For spread moves, say “single target” when only one Pokémon will be hit; otherwise Coach assumes multiple targets in doubles.</p>
-              <div className="coach-examples">
-                <button type="button" onClick={() => useExample(defensiveExample)}>{defensiveExample}</button>
-                <button type="button" onClick={() => useExample(offensiveExample)}>{offensiveExample}</button>
-              </div>
+              <h3>Select a pinned calc</h3>
+              <p>Click a pinned damage or speed result in the strip to inspect the opposing Pokémon, assumptions, and extra modifiers.</p>
             </div>
           ) : (
-            <div className="coach-answer" aria-live="polite">
-              {earlierTurns.length > 0 && (
-                <div className="coach-history" aria-label="Earlier questions">
-                  <span>Earlier</span>
-                  {earlierTurns.map((turn, index) => (
-                    <p key={`${turn.resolvedQuestion}-${index}`}>{turn.prompt}</p>
-                  ))}
-                </div>
-              )}
-
-              {latestTurn && (
-                <div className="coach-turn user">
-                  <span>You asked</span>
-                  <p>{latestTurn.prompt}</p>
-                  {latestTurn.usedContext && <small>I’m treating this as a follow-up to the previous calc.</small>}
-                </div>
-              )}
-
-              <div className="coach-turn coach">
-                <div className="coach-message">
-                  <span className="eyebrow">Pane Coach</span>
-                  <h3>{answer.title}</h3>
-                  <p>{answer.intro || answer.summary}</p>
-                </div>
-              </div>
-
-              {answer.currentRange && (
-                <CoachCurrentRange range={answer.currentRange} mode={answer.mode} />
-              )}
-
-              {answer.awaitingScope && answer.followUps && (
-                <div className="coach-turn coach coach-follow-ups">
-                  <p>{answer.prompt}</p>
-                  <div className="coach-scope-chips">
-                    {answer.followUps.map((followUp) => (
-                      <button key={followUp.scope} type="button" onClick={() => applyScope(followUp.scope)}>
-                        <strong>{followUp.label}</strong>
-                        <small>{followUp.description}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {answer.currentRange && (
-                <div className="coach-pin-actions">
-                  <button
-                    className={`coach-pin-button ${isPinned ? "active" : ""}`}
-                    type="button"
-                    onClick={togglePinCurrentCalc}
-                    disabled={!isPinned && pinSlotsFull}
-                  >
-                    <Pin size={12} />
-                    {isPinned
-                      ? "Pinned to strip"
-                      : pinSlotsFull
-                        ? `Strip full (${MAX_PINNED_CALCS}/${MAX_PINNED_CALCS})`
-                        : pinnedQuestions.length
-                          ? `Pin calc to strip (${pinnedQuestions.length}/${MAX_PINNED_CALCS})`
-                          : "Pin calc to strip"}
-                  </button>
-                  {pinSlotsFull && !isPinned && (
-                    <small>Unpin a calc from the strip to pin another (max {MAX_PINNED_CALCS}).</small>
-                  )}
-                  {pinnedQuestions.length > 0 && !isPinned && !pinSlotsFull && (
-                    <small>{pinnedQuestions.length} calc{pinnedQuestions.length === 1 ? "" : "s"} pinned — add this one too.</small>
-                  )}
-                </div>
-              )}
-
-              {!answer.awaitingScope && answer.summary && answer.intro && (
-                <p className="coach-result-summary">{answer.summary}</p>
-              )}
-
-              {!answer.awaitingScope && answer.recommendations.length > 0 && (
-                <div className="survival-grid">
-                  {answer.recommendations.map((recommendation) => (
-                    <article className="survival-card" key={`${recommendation.nature}-${recommendation.item}-${recommendation.hpPoints}-${recommendation.defensePoints}-${recommendation.attackPoints}`}>
-                      <div className="survival-card-heading">
-                        <span>{recommendation.label}</span>
-                        <strong>{recommendation.damagePercent[0]}–{recommendation.damagePercent[1]}%</strong>
-                      </div>
-                      {answer.mode === "offensive" ? (
-                        <>
-                          <h4>{coachRecommendationHeadline(answer, recommendation)}</h4>
-                          <p>{coachRecommendationDetail(answer, recommendation)}</p>
-                          <dl>
-                            <div><dt>Damage</dt><dd>{recommendation.damage[0]}–{recommendation.damage[1]}</dd></div>
-                            <div><dt>Target HP</dt><dd>{answer.targetHp}</dd></div>
-                            <div><dt>KO odds</dt><dd>{Math.round(recommendation.outcomeChance * 100)}%</dd></div>
-                          </dl>
-                        </>
-                      ) : (
-                        <>
-                          <h4>{coachRecommendationHeadline(answer, recommendation)}</h4>
-                          <p>{coachRecommendationDetail(answer, recommendation)}</p>
-                          <dl>
-                            <div><dt>Damage</dt><dd>{recommendation.damage[0]}–{recommendation.damage[1]}</dd></div>
-                            <div><dt>Your HP</dt><dd>{recommendation.hp}</dd></div>
-                            <div><dt>Survive odds</dt><dd>{Math.round(recommendation.outcomeChance * 100)}%</dd></div>
-                          </dl>
-                        </>
-                      )}
-                      {answer.targetBuildId && (
-                        <button className="apply-spread" type="button" onClick={() => applySpread(answer.targetBuildId!, answer, recommendation)}>
-                          Apply this spread
-                        </button>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              )}
-
-              {!answer.awaitingScope && answer.recommendations.length === 0 && answer.followUps && (
-                <div className="coach-turn coach coach-follow-ups">
-                  <p>Want to try a different approach?</p>
-                  <div className="coach-scope-chips">
-                    {answer.followUps.map((followUp) => (
-                      <button key={followUp.scope} type="button" onClick={() => applyScope(followUp.scope)}>
-                        <strong>{followUp.label}</strong>
-                        <small>{followUp.description}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <details className="coach-assumptions">
-                <summary>What I assumed for this calc</summary>
-                <ul>{answer.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}</ul>
-              </details>
-            </div>
+            <CoachCalcInspector
+              question={inspectorQuestion}
+              answer={inspectorAnswer}
+              team={team}
+              selectedId={selectedId}
+              layout={inspectorLayout ?? inspectorDefaultLayout!}
+              onLayoutChange={handleInspectorLayoutChange}
+              opponentTemplateLabel={inspectorOpponentLabel}
+              showApplyTemplatePrompt={showApplyTemplatePrompt}
+              onApplyOpponentTemplate={applyOpponentTemplate}
+              onDismissApplyTemplatePrompt={() => {
+                if (!inspectorQuestion) return;
+                setDismissedTemplateForQuestion((current) => ({ ...current, [inspectorQuestion]: true }));
+              }}
+              onApplySpread={applySpread}
+              onLivePreview={setInspectorLivePreview}
+            />
           )}
         </div>
       </div>
@@ -1712,10 +2941,12 @@ function pinnedMatchupLabel(mode: CoachAnswer["mode"], range: NonNullable<CoachA
     : `${range.moveName} from ${range.attackerName}`;
 }
 
-function PinnedDamageVis({ range, mode, title, onUnpin }: {
+function PinnedDamageVis({ range, mode, title, selected, onSelect, onUnpin }: {
   range: NonNullable<CoachAnswer["currentRange"]>;
   mode: CoachAnswer["mode"];
   title: string;
+  selected?: boolean;
+  onSelect?: () => void;
   onUnpin?: () => void;
 }) {
   const [low, high] = range.damagePercent;
@@ -1726,19 +2957,82 @@ function PinnedDamageVis({ range, mode, title, onUnpin }: {
   const tone = range.outcomeChance >= 1 ? "pass" : range.outcomeChance >= 0.5 ? "warn" : "fail";
   const matchupLabel = pinnedMatchupLabel(mode, range);
   return (
-    <div className="coach-pin-vis" aria-label={`${title}: ${low} to ${high} percent of HP`}>
+    <button className={`coach-pin-vis ${selected ? "selected" : ""}`} type="button" onClick={onSelect} aria-label={`${title}: ${low} to ${high} percent of HP`}>
       <div className="coach-pin-topline">
         <span className="coach-pin-label" title={matchupLabel}>{matchupLabel}</span>
         {onUnpin && (
-          <button className="coach-pin-unpin" type="button" onClick={onUnpin} aria-label="Unpin damage calc">
+          <span
+            className="coach-pin-unpin"
+            role="button"
+            tabIndex={0}
+            onClick={(event) => {
+              event.stopPropagation();
+              onUnpin();
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              event.stopPropagation();
+              onUnpin();
+            }}
+            aria-label="Unpin damage calc"
+          >
             <X size={11} />
-          </button>
+          </span>
         )}
       </div>
-      <strong className={tone}>{low}–{high}%</strong>
-      <div className="coach-pin-track" aria-hidden="true"><i style={{ left: `${left}%`, width: `${width}%` }} /></div>
-      <small>{Math.round(range.outcomeChance * 100)}% {oddsLabel}</small>
-    </div>
+      <div className="coach-pin-body">
+        <strong className={tone}>{low}–{high}%</strong>
+        <div className="coach-pin-track" aria-hidden="true"><i style={{ left: `${left}%`, width: `${width}%` }} /></div>
+        <small>{Math.round(range.outcomeChance * 100)}% {oddsLabel}</small>
+      </div>
+    </button>
+  );
+}
+
+function PinnedCheckVis({ check, selected, onSelect, onUnpin }: {
+  check: NonNullable<CoachAnswer["currentCheck"]>;
+  selected?: boolean;
+  onSelect?: () => void;
+  onUnpin?: () => void;
+}) {
+  const tone = speedOutcomeTone(check.outcomeLabel);
+  const headline = check.outcomeLabel ?? check.value;
+  const pinTitle = check.title;
+  return (
+    <button className={`coach-pin-vis coach-pin-check ${selected ? "selected" : ""}`} type="button" onClick={onSelect} title={check.verdict} aria-label={`${pinTitle}: ${headline}. ${check.value}. ${check.verdict}`}>
+      <div className="coach-pin-topline">
+        <span className="coach-pin-label" title={pinTitle}>{pinTitle}</span>
+        {onUnpin && (
+          <span
+            className="coach-pin-unpin"
+            role="button"
+            tabIndex={0}
+            onClick={(event) => {
+              event.stopPropagation();
+              onUnpin();
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return;
+              event.preventDefault();
+              event.stopPropagation();
+              onUnpin();
+            }}
+            aria-label="Unpin coach check"
+          >
+            <X size={11} />
+          </span>
+        )}
+      </div>
+      <div className="coach-pin-body">
+        <strong className={tone}>{headline}</strong>
+        {check.outcomeLabel ? (
+          <small className="coach-pin-speed-stats">{check.value}</small>
+        ) : (
+          <small>{check.label}</small>
+        )}
+      </div>
+    </button>
   );
 }
 

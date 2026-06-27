@@ -2,7 +2,10 @@ import optionDetails from "../data/champions-options.json";
 import {
   CHAMPIONS_STAT_POINT_MAX,
   CHAMPIONS_STAT_POINT_TOTAL,
+  applyBattleStatModifiers,
+  applyStatStage,
   calculateStat,
+  statStageMultiplier,
   MegaForm,
   POKEMON,
   PokemonBuild,
@@ -31,6 +34,7 @@ type BattleConditions = {
   weather: Weather;
   terrain: Terrain;
   targeting: TargetingMode;
+  criticalHit: boolean;
 };
 
 export type CoachMode = "defensive" | "offensive";
@@ -62,12 +66,26 @@ export type CoachDamageRange = {
   outcomeChance: number;
 };
 
+export type CoachQuickCheck = {
+  label: string;
+  title: string;
+  value: string;
+  verdict: string;
+  outcomeLabel?: "Faster" | "Slower" | "Tie";
+  meta: Array<{ label: string; value: string }>;
+};
+
 export type CoachSearchScope = "stats" | "nature" | "item" | "all";
 
 export type CoachFollowUp = {
   scope: CoachSearchScope;
   label: string;
   description: string;
+};
+
+export type CoachSpeedContext = {
+  subjectName: string;
+  opponentName: string;
 };
 
 export type CoachAnswer = {
@@ -87,12 +105,17 @@ export type CoachAnswer = {
   attackStat?: "Atk" | "SpA";
   targetHp?: number;
   currentRange?: CoachDamageRange;
+  currentCheck?: CoachQuickCheck;
+  speedContext?: CoachSpeedContext;
 };
 
 export function baseCoachQuestion(question: string) {
   const marker = "\nFollow-up constraint:";
   const index = question.indexOf(marker);
-  return index >= 0 ? question.slice(0, index).trim() : question.trim();
+  const base = index >= 0 ? question.slice(0, index).trim() : question.trim();
+  return base
+    .replace(/\ba\s+max(?:imum|ed)?\s+(?:speed|spe)\s+/gi, "")
+    .replace(/\bmax(?:imum|ed)?\s+(?:speed|spe)\s+/gi, "");
 }
 
 export function parseSearchScope(question: string): CoachSearchScope | undefined {
@@ -456,6 +479,11 @@ function isSpreadMove(moveName: string, move: MoveDetails) {
     || /foe\(s\)|hits foes|adjacent (?:foes|pokemon)|all adjacent/i.test(move.description ?? "");
 }
 
+export function moveIsSpread(moveName: string, move?: MoveDetails) {
+  if (!move) return false;
+  return isSpreadMove(moveName, move);
+}
+
 function targetingMode(question: string, moveName: string, move: MoveDetails): TargetingMode {
   if (!isSpreadMove(moveName, move)) return "single";
   const lower = question.toLowerCase();
@@ -468,9 +496,163 @@ function targetingMode(question: string, moveName: string, move: MoveDetails): T
   return "multiple";
 }
 
+const EXPLICIT_NATURE_NAMES = [
+  "Hardy", "Lonely", "Adamant", "Naughty", "Brave",
+  "Bold", "Docile", "Impish", "Lax", "Relaxed",
+  "Modest", "Mild", "Bashful", "Rash", "Quiet",
+  "Calm", "Gentle", "Careful", "Quirky", "Sassy",
+  "Timid", "Hasty", "Jolly", "Naive", "Serious",
+] as const;
+
+function explicitNature(question: string, pokemonName: string) {
+  const escaped = pokemonName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const namedMatches = [...question.matchAll(new RegExp(`${escaped} has (\\w+) nature`, "gi"))];
+  if (namedMatches.length) {
+    const lastNature = namedMatches[namedMatches.length - 1][1];
+    const match = EXPLICIT_NATURE_NAMES.find((nature) => nature.toLowerCase() === lastNature.toLowerCase());
+    if (match) return match;
+  }
+
+  const lower = question.toLowerCase();
+  let searchFrom = 0;
+  let lastNature: string | undefined;
+  while (searchFrom < lower.length) {
+    const nameIndex = lower.indexOf(pokemonName.toLowerCase(), searchFrom);
+    if (nameIndex < 0) break;
+    const window = lower.slice(nameIndex, nameIndex + pokemonName.length + 96);
+    const found = EXPLICIT_NATURE_NAMES.find((nature) =>
+      new RegExp(`\\b${nature.toLowerCase()}\\s+nature\\b`).test(window),
+    );
+    if (found) lastNature = found;
+    searchFrom = nameIndex + pokemonName.length;
+  }
+  return lastNature;
+}
+
+function explicitStatPoints(question: string, pokemonName: string, stat: StatKey) {
+  const labels: Record<StatKey, string> = {
+    HP: "hp",
+    Atk: "atk|attack",
+    Def: "def|defense",
+    SpA: "spa|sp\\. atk|special attack",
+    SpD: "spd|sp\\. def|special defense",
+    Spe: "spe|speed",
+  };
+  const label = labels[stat];
+  const escaped = pokemonName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const namedMatches = [...question.matchAll(new RegExp(`${escaped} has (\\d{1,2}) ${label} Stat Points`, "gi"))];
+  if (namedMatches.length) {
+    const last = namedMatches[namedMatches.length - 1];
+    return Math.max(0, Math.min(CHAMPIONS_STAT_POINT_MAX, Number(last[1])));
+  }
+
+  const lower = question.toLowerCase();
+  let searchFrom = 0;
+  let lastValue: number | undefined;
+  while (searchFrom < lower.length) {
+    const nameIndex = lower.indexOf(pokemonName.toLowerCase(), searchFrom);
+    if (nameIndex < 0) break;
+    const window = lower.slice(nameIndex, nameIndex + pokemonName.length + 260);
+    const patterns = [
+      new RegExp(`\\b(\\d{1,2})\\s*(?:${label})\\s*(?:stat\\s*)?points?\\b`, "i"),
+      new RegExp(`\\b(?:${label})\\s*[:=]?\\s*(\\d{1,2})\\s*(?:stat\\s*)?points?\\b`, "i"),
+    ];
+    const match = patterns.map((pattern) => window.match(pattern)).find(Boolean);
+    if (match) lastValue = Math.max(0, Math.min(CHAMPIONS_STAT_POINT_MAX, Number(match[1])));
+    searchFrom = nameIndex + pokemonName.length;
+  }
+  return lastValue;
+}
+
 function inferredCondition<T extends string>(values: T[]) {
   const unique = [...new Set(values.filter(Boolean))];
   return unique.length === 1 ? unique[0] : "";
+}
+
+function explicitCriticalHit(question: string): boolean | undefined {
+  const lower = question.toLowerCase();
+  if (/\b(?:no critical|without critical|non[- ]?critical)\b/.test(lower)) return false;
+  if (/\b(?:on a critical hit|critical hit|crit(?:ical)? hit|with a crit)\b/.test(lower)) return true;
+  return undefined;
+}
+
+export type SpeedControlSide = "" | "tailwind" | "icy-wind";
+
+export type FieldModifiers = {
+  trickRoom: boolean;
+  subjectSpeedControl: SpeedControlSide;
+  opponentSpeedControl: SpeedControlSide;
+  subjectStatStage: number;
+  opponentStatStage: number;
+};
+
+function speedControlStage(control: SpeedControlSide): number {
+  if (control === "tailwind") return 2;
+  if (control === "icy-wind") return -1;
+  return 0;
+}
+
+function explicitTrickRoom(question: string): boolean | undefined {
+  const lower = question.toLowerCase();
+  if (/\b(?:no trick room|without trick room)\b/.test(lower)) return false;
+  if (/\b(?:under|in|with|during) trick room\b|\btrick room (?:is )?(?:up|active)\b/.test(lower)) return true;
+  return undefined;
+}
+
+function explicitSideSpeedControl(question: string, side: "subject" | "opponent", opponentName: string): SpeedControlSide | undefined {
+  const lower = question.toLowerCase();
+  if (side === "subject") {
+    if (/\btailwind on my side\b/.test(lower)) return "tailwind";
+    if (/\bicy wind on my side\b/.test(lower)) return "icy-wind";
+    return undefined;
+  }
+  const escaped = opponentName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (new RegExp(`tailwind on (?:their|the opponent(?:'s)?|${escaped}(?:'s)?) side`, "i").test(question)) return "tailwind";
+  if (new RegExp(`icy wind on (?:their|the opponent(?:'s)?|${escaped}(?:'s)?) side`, "i").test(question)) return "icy-wind";
+  return undefined;
+}
+
+function explicitNamedStatStage(question: string, pokemonName: string): number | undefined {
+  const escaped = pokemonName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = question.match(new RegExp(`${escaped} has ([+-]\\d+)\\s+(?:stages of )?(Atk|SpA|Def|SpD|Spe|Attack|Special Attack|Defense|Special Defense|Speed)`, "i"));
+  if (!match) return undefined;
+  return Math.max(-6, Math.min(6, Number(match[1])));
+}
+
+export function fieldModifiers(question: string, subjectName: string, opponentName: string): FieldModifiers {
+  return {
+    trickRoom: explicitTrickRoom(question) ?? false,
+    subjectSpeedControl: explicitSideSpeedControl(question, "subject", opponentName) ?? "",
+    opponentSpeedControl: explicitSideSpeedControl(question, "opponent", opponentName) ?? "",
+    subjectStatStage: explicitNamedStatStage(question, subjectName) ?? 0,
+    opponentStatStage: explicitNamedStatStage(question, opponentName) ?? 0,
+  };
+}
+
+function stagedDamageStats(
+  mode: CoachMode,
+  attack: number,
+  defense: number,
+  mods: FieldModifiers,
+) {
+  const attackStage = mode === "offensive" ? mods.subjectStatStage : mods.opponentStatStage;
+  const defenseStage = mode === "offensive" ? mods.opponentStatStage : mods.subjectStatStage;
+  return {
+    attack: applyStatStage(attack, attackStage),
+    defense: applyStatStage(defense, defenseStage),
+  };
+}
+
+function fieldAssumptionLine(mods: FieldModifiers): string {
+  const parts: string[] = [];
+  if (mods.trickRoom) parts.push("Trick Room active");
+  if (mods.subjectSpeedControl === "tailwind") parts.push("Tailwind on your side");
+  if (mods.subjectSpeedControl === "icy-wind") parts.push("Icy Wind on your side");
+  if (mods.opponentSpeedControl === "tailwind") parts.push("Tailwind on their side");
+  if (mods.opponentSpeedControl === "icy-wind") parts.push("Icy Wind on their side");
+  if (mods.subjectStatStage) parts.push(`Your side at ${mods.subjectStatStage > 0 ? "+" : ""}${mods.subjectStatStage} on the relevant stat`);
+  if (mods.opponentStatStage) parts.push(`Their side at ${mods.opponentStatStage > 0 ? "+" : ""}${mods.opponentStatStage} on the relevant stat`);
+  return parts.length ? parts.join(". ") + "." : "No speed control or stat stages applied.";
 }
 
 function battleConditions(
@@ -492,6 +674,7 @@ function battleConditions(
       TERRAIN_FROM_ABILITY[defenderAbility] ?? "",
     ]),
     targeting: targetingMode(question, moveName, move),
+    criticalHit: explicitCriticalHit(question) ?? false,
   };
 }
 
@@ -751,6 +934,7 @@ function damageRolls({ attacker, defender, moveName, move, attack, defense, atta
     if (activeDefenderAbility === "Dry Skin" && moveType === "Fire") damage = Math.floor(damage * 1.25);
     if (conditions.terrain === "Misty" && defenderGrounded && moveType === "Dragon") damage = Math.floor(damage * 0.5);
     if (attackerItem === "Life Orb") damage = Math.floor(damage * 1.3 + 0.5);
+    if (conditions.criticalHit) damage = Math.floor(damage * 1.5);
     if (effectiveness > 1 && defenderItem === BERRIES[moveType]) damage = Math.floor(damage * 0.5 + 0.5);
     return Math.max(1, damage);
   });
@@ -782,6 +966,102 @@ function currentDamageRange(
 
 function fail(message: string): CoachAnswer {
   return { ok: false, mode: "defensive", title: "I need one more detail", summary: message, assumptions: [], recommendations: [] };
+}
+
+function detectsSpeedCheck(question: string) {
+  return /\b(?:outspeed|out[- ]?speed|faster than|speed check|outpace|move first)\b/i.test(question);
+}
+
+function speedNatureName(question: string, opponentName: string, build?: PokemonBuild) {
+  return explicitNature(question, opponentName) ?? build?.nature ?? "Hardy";
+}
+
+function speedPoints(question: string, opponentName: string, build?: PokemonBuild) {
+  const explicit = explicitStatPoints(question, opponentName, "Spe");
+  if (explicit !== undefined) return explicit;
+  return build?.evs.Spe ?? 0;
+}
+
+function effectiveSpeedForPokemon(
+  pokemon: CoachPokemon,
+  statPoints: number,
+  nature: string,
+  question: string,
+  build: PokemonBuild | undefined,
+  role: "subject" | "opponent",
+  subjectName: string,
+  opponentName: string,
+) {
+  const mods = fieldModifiers(question, subjectName, opponentName);
+  const baseSpeed = calculateStat(pokemon.stats.Spe, statPoints, "Spe", nature);
+  const speedControl = role === "subject" ? mods.subjectSpeedControl : mods.opponentSpeedControl;
+  const statStage = (role === "subject" ? mods.subjectStatStage : mods.opponentStatStage) + speedControlStage(speedControl);
+  const staged = applyStatStage(baseSpeed, statStage);
+  const item = describeFixedItem(question, pokemon, build);
+  const ability = resolveAbility(question, pokemon);
+  const weather = explicitWeather(question) ?? "";
+  const terrain = explicitTerrain(question) ?? "";
+  return applyBattleStatModifiers("Spe", staged, { item, ability, weather, terrain });
+}
+
+function answerSpeedCheck(
+  question: string,
+  team: PokemonBuild[],
+  subject: CoachPokemon | undefined,
+  opponent: CoachPokemon | undefined,
+): CoachAnswer {
+  const normalizedQuestion = baseCoachQuestion(question);
+  if (!subject) return fail("Name the Pokémon you are checking, or select it in the team editor first.");
+  if (!opponent) return fail(`Tell me which Pokémon ${subject.name} should outspeed.`);
+
+  const subjectBuild = team.find((entry) => entry.species === subject.baseSpecies);
+  const opponentBuild = team.find((entry) => entry.species === opponent.baseSpecies);
+  const subjectNature = subjectBuild?.nature || "Hardy";
+  const opponentNature = speedNatureName(normalizedQuestion, opponent.name, opponentBuild);
+  const subjectPoints = subjectBuild?.evs.Spe ?? 0;
+  const opponentPoints = speedPoints(normalizedQuestion, opponent.name, opponentBuild);
+  const mods = fieldModifiers(normalizedQuestion, subject.name, opponent.name);
+  const subjectSpeed = effectiveSpeedForPokemon(subject, subjectPoints, subjectNature, normalizedQuestion, subjectBuild, "subject", subject.name, opponent.name);
+  const opponentSpeed = effectiveSpeedForPokemon(opponent, opponentPoints, opponentNature, normalizedQuestion, opponentBuild, "opponent", subject.name, opponent.name);
+  const margin = Math.abs(subjectSpeed - opponentSpeed);
+  const doesOutspeed = mods.trickRoom ? subjectSpeed < opponentSpeed : subjectSpeed > opponentSpeed;
+  const ties = subjectSpeed === opponentSpeed;
+  const verdict = doesOutspeed
+    ? `Yes — ${subject.name} ${mods.trickRoom ? "moves first under Trick Room" : "is faster"} by ${margin} point${margin === 1 ? "" : "s"}.`
+    : ties
+      ? `Not cleanly — both land at ${subjectSpeed} Speed, so it is a speed tie.`
+      : `No — ${opponent.name} ${mods.trickRoom ? "moves first under Trick Room" : "is faster"} by ${margin} point${margin === 1 ? "" : "s"}.`;
+  const summary = `${verdict} Your current ${subject.name} reaches ${subjectSpeed} Speed (${subjectPoints} Spe, ${subjectNature}), while ${opponent.name} reaches ${opponentSpeed} Speed (${opponentPoints} Spe, ${opponentNature}).`;
+
+  return {
+    ok: true,
+    mode: "defensive",
+    title: `Speed check: ${subject.name} vs ${opponent.name}`,
+    summary,
+    intro: summary,
+    currentCheck: {
+      label: "Speed Check",
+      title: `${subject.name} vs ${opponent.name}`,
+      value: `${subjectSpeed} vs ${opponentSpeed}`,
+      verdict,
+      outcomeLabel: ties ? "Tie" : doesOutspeed ? "Faster" : "Slower",
+      meta: [
+        { label: subject.name, value: `${subjectSpeed} Spe` },
+        { label: opponent.name, value: `${opponentSpeed} Spe` },
+        { label: "Margin", value: ties ? "Tie" : `${margin}` },
+      ],
+    },
+    speedContext: {
+      subjectName: subject.name,
+      opponentName: opponent.name,
+    },
+    assumptions: [
+      `${subject.name}: ${subjectPoints} Spe stat points, ${subjectNature} nature.`,
+      `${opponent.name}: ${opponentPoints} Spe stat points, ${opponentNature} nature.`,
+      fieldAssumptionLine(mods),
+    ],
+    recommendations: [],
+  };
 }
 
 function describeOutcome(mode: CoachMode, chance: number) {
@@ -997,8 +1277,10 @@ function answerDefensiveCoach(
   const conditions = battleConditions(question, moveName, move, attackerAbility, defenderAbility);
   const asksPositiveNature = new RegExp(`(?:\\+|positive|boosting|max(?:imum)?)[ -]?${attackStat.toLowerCase()}|${attackStat.toLowerCase()}[ -]?nature`, "i").test(question);
   const asksMaxAttack = new RegExp(`max(?:imum|ed)?(?:\\s+|[ -])${attackStat.toLowerCase()}|${attackStat.toLowerCase()}(?:\\s+|[ -])max`, "i").test(question);
-  const attackerNature = asksPositiveNature ? boostedNature(attackStat) : attackerBuild?.nature ?? "Hardy";
-  const attackerPoints = asksMaxAttack ? CHAMPIONS_STAT_POINT_MAX : attackerBuild?.evs[attackStat] ?? 0;
+  const attackerNature = explicitNature(question, attacker.name)
+    ?? (asksPositiveNature ? boostedNature(attackStat) : attackerBuild?.nature ?? "Hardy");
+  const explicitAttackPoints = explicitStatPoints(question, attacker.name, attackStat);
+  const attackerPoints = explicitAttackPoints ?? (asksMaxAttack ? CHAMPIONS_STAT_POINT_MAX : attackerBuild?.evs[attackStat] ?? 0);
   const attackerItem = mentionedItemNear(question, attacker.name)
     || attackerBuild?.item
     || undefined;
@@ -1012,6 +1294,7 @@ function answerDefensiveCoach(
     mentionedDefenderItem,
   );
   const attack = calculateStat(attacker.stats[attackStat], attackerPoints, attackStat, attackerNature);
+  const fieldMods = fieldModifiers(question, defender.name, attacker.name);
   const currentRange = targetBuild ? (() => {
     const nature = targetBuild.nature || "Hardy";
     const hp = calculateStat(defender.stats.HP, targetBuild.evs.HP, "HP", nature);
@@ -1019,13 +1302,14 @@ function answerDefensiveCoach(
     const defenderItem = (searchScope === "stats" || searchScope === "nature")
       ? targetBuild.item || undefined
       : defenderItems[0] || targetBuild.item || undefined;
+    const staged = stagedDamageStats("defensive", attack, defense, fieldMods);
     const rolls = damageRolls({
       attacker,
       defender,
       moveName,
       move,
-      attack,
-      defense,
+      attack: staged.attack,
+      defense: staged.defense,
       attackerItem,
       defenderItem,
       attackerAbility,
@@ -1057,7 +1341,7 @@ function answerDefensiveCoach(
     isSpreadMove(moveName, move)
       ? `Targeting: ${conditions.targeting === "multiple" ? "multiple Pokémon; the 0.75× spread modifier is applied" : "one Pokémon; no spread reduction is applied"}.`
       : "Targeting: single-target move; no spread reduction is applied.",
-    `No critical hit, screens, or stat stages. Conditional ability effects requiring low HP, status, prior KOs, switching order, or an ally are not activated. ${moveName} is ${effectiveness}x effective.`,
+    `${conditions.criticalHit ? "Critical hit" : "No critical hit"} and screens. ${fieldAssumptionLine(fieldMods)} Conditional ability effects requiring low HP, status, prior KOs, switching order, or an ally are not activated. ${moveName} is ${effectiveness}x effective.`,
   ];
 
   if (targetBuild && currentRange && !searchScope) {
@@ -1067,7 +1351,7 @@ function answerDefensiveCoach(
       buildCurrentIntro("defensive", currentRange, defender.name),
       assumptions,
       buildFollowUps("defensive", defenseStat),
-      { targetBuildId: targetBuild.id, defenseStat, currentRange },
+      { targetBuildId: targetBuild.id, attackStat, defenseStat, currentRange },
     );
   }
 
@@ -1088,13 +1372,14 @@ function answerDefensiveCoach(
           if (hpPoints + defensePoints > CHAMPIONS_STAT_POINT_TOTAL) continue;
           const hp = calculateStat(defender.stats.HP, hpPoints, "HP", nature);
           const defense = calculateStat(defender.stats[defenseStat], defensePoints, defenseStat, nature);
+          const staged = stagedDamageStats("defensive", attack, defense, fieldMods);
           const rolls = damageRolls({
             attacker,
             defender,
             moveName,
             move,
-            attack,
-            defense,
+            attack: staged.attack,
+            defense: staged.defense,
             attackerItem,
             defenderItem: defenderItem || undefined,
             attackerAbility,
@@ -1171,9 +1456,11 @@ function answerOffensiveCoach(
   const conditions = battleConditions(question, moveName, move, attackerAbility, defenderAbility);
   const asksPositiveNature = new RegExp(`(?:\\+|positive|boosting|max(?:imum)?)[ -]?${attackStat.toLowerCase()}|${attackStat.toLowerCase()}[ -]?nature`, "i").test(question);
   const asksMaxDefense = new RegExp(`max(?:imum|ed)?(?:\\s+|[ -])(?:hp|${defenseStat.toLowerCase()})`, "i").test(question);
-  const defenderNature = defenderBuild?.nature ?? "Hardy";
-  const defenderHpPoints = asksMaxDefense ? CHAMPIONS_STAT_POINT_MAX : defenderBuild?.evs.HP ?? 0;
-  const defenderDefPoints = asksMaxDefense ? CHAMPIONS_STAT_POINT_MAX : defenderBuild?.evs[defenseStat] ?? 0;
+  const defenderNature = explicitNature(question, defender.name) ?? defenderBuild?.nature ?? "Hardy";
+  const explicitHpPoints = explicitStatPoints(question, defender.name, "HP");
+  const explicitDefensePoints = explicitStatPoints(question, defender.name, defenseStat);
+  const defenderHpPoints = explicitHpPoints ?? (asksMaxDefense ? CHAMPIONS_STAT_POINT_MAX : defenderBuild?.evs.HP ?? 0);
+  const defenderDefPoints = explicitDefensePoints ?? (asksMaxDefense ? CHAMPIONS_STAT_POINT_MAX : defenderBuild?.evs[defenseStat] ?? 0);
   const defenderItem = mentionedItemNear(question, defender.name)
     || defenderBuild?.item
     || undefined;
@@ -1188,6 +1475,7 @@ function answerOffensiveCoach(
   );
   const defenderHp = calculateStat(defender.stats.HP, defenderHpPoints, "HP", defenderNature);
   const defenderDefense = calculateStat(defender.stats[defenseStat], defenderDefPoints, defenseStat, defenderNature);
+  const fieldMods = fieldModifiers(question, attacker.name, defender.name);
   const currentRange = targetBuild ? (() => {
     const attackerNature = targetBuild.nature || "Hardy";
     const attackerPoints = targetBuild.evs[attackStat];
@@ -1195,13 +1483,14 @@ function answerOffensiveCoach(
     const attackerItem = (searchScope === "stats" || searchScope === "nature")
       ? targetBuild.item || undefined
       : attackerItems[0] || targetBuild.item || undefined;
+    const staged = stagedDamageStats("offensive", attack, defenderDefense, fieldMods);
     const rolls = damageRolls({
       attacker,
       defender,
       moveName,
       move,
-      attack,
-      defense: defenderDefense,
+      attack: staged.attack,
+      defense: staged.defense,
       attackerItem,
       defenderItem,
       attackerAbility,
@@ -1232,7 +1521,7 @@ function answerOffensiveCoach(
     isSpreadMove(moveName, move)
       ? `Targeting: ${conditions.targeting === "multiple" ? "multiple Pokémon; the 0.75× spread modifier is applied" : "one Pokémon; no spread reduction is applied"}.`
       : "Targeting: single-target move; no spread reduction is applied.",
-    `No critical hit, screens, or stat stages. Conditional ability effects requiring low HP, status, prior KOs, switching order, or an ally are not activated. ${moveName} is ${effectiveness}x effective.`,
+    `${conditions.criticalHit ? "Critical hit" : "No critical hit"} and screens. ${fieldAssumptionLine(fieldMods)} Conditional ability effects requiring low HP, status, prior KOs, switching order, or an ally are not activated. ${moveName} is ${effectiveness}x effective.`,
   ];
 
   if (targetBuild && currentRange && !searchScope) {
@@ -1242,7 +1531,7 @@ function answerOffensiveCoach(
       buildCurrentIntro("offensive", currentRange, attacker.name),
       assumptions,
       buildFollowUps("offensive", attackStat),
-      { targetBuildId: targetBuild.id, attackStat, targetHp: defenderHp, currentRange },
+      { targetBuildId: targetBuild.id, attackStat, defenseStat, targetHp: defenderHp, currentRange },
     );
   }
 
@@ -1261,13 +1550,14 @@ function answerOffensiveCoach(
       if (asksPositiveNature && nature === "Hardy") continue;
       for (let attackPoints = 0; attackPoints <= CHAMPIONS_STAT_POINT_MAX; attackPoints++) {
         const attack = calculateStat(attacker.stats[attackStat], attackPoints, attackStat, nature);
+        const staged = stagedDamageStats("offensive", attack, defenderDefense, fieldMods);
         const rolls = damageRolls({
           attacker,
           defender,
           moveName,
           move,
-          attack,
-          defense: defenderDefense,
+          attack: staged.attack,
+          defense: staged.defense,
           attackerItem: attackerItem || undefined,
           defenderItem,
           attackerAbility,
@@ -1352,6 +1642,10 @@ export function answerCoachQuestion(question: string, team: PokemonBuild[], sele
     team,
     question,
   );
+
+  if (detectsSpeedCheck(question)) {
+    return answerSpeedCheck(question, team, builder, opponent);
+  }
 
   if (mode === "offensive") {
     const { attacker, defender } = resolveOffensiveCombatants(question, mentions, selectedCombatant);

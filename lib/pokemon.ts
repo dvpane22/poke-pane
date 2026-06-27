@@ -23,6 +23,33 @@ export type MegaForm = {
   artwork: string;
 };
 
+export function formatMegaDisplayName(species: string, formName: string) {
+  const marker = `${species}-Mega`;
+  if (!formName.startsWith(marker)) {
+    const [base, suffix = ""] = formName.split("-Mega");
+    return `Mega ${base}${suffix ? ` ${suffix.replace(/-/g, " ").trim()}` : ""}`;
+  }
+  const suffix = formName.slice(marker.length).replace(/-/g, " ").trim();
+  return `Mega ${species}${suffix ? ` ${suffix}` : ""}`;
+}
+
+export function resolvePokemonFromDisplayName(displayName: string): {
+  data: PokemonData;
+  megaForm: MegaForm | null;
+} | null {
+  const exact = POKEMON.find((pokemon) => pokemon.name === displayName);
+  if (exact) return { data: exact, megaForm: null };
+
+  for (const pokemon of POKEMON) {
+    for (const form of pokemon.megaForms ?? []) {
+      if (formatMegaDisplayName(pokemon.name, form.name) === displayName) {
+        return { data: pokemon, megaForm: form };
+      }
+    }
+  }
+  return null;
+}
+
 export type PokemonBuild = {
   id: string;
   species: string;
@@ -68,6 +95,69 @@ export function calculateStat(base: number, ev: number, stat: StatKey, nature: s
   if (stat === "HP") return base + 75 + ev;
   const levelScaled = Math.floor(((2 * base + 31) * 50) / 100);
   return Math.floor((levelScaled + 5 + ev) * getNatureEffect(nature, stat));
+}
+
+export type BattleStatContext = {
+  item?: string;
+  ability?: string;
+  weather?: string;
+  terrain?: string;
+  statStage?: number;
+};
+
+export function statStageMultiplier(stage: number): number {
+  const clamped = Math.max(-6, Math.min(6, Math.trunc(stage)));
+  if (clamped >= 0) return (2 + clamped) / 2;
+  return 2 / (2 - clamped);
+}
+
+export function applyStatStage(value: number, stage: number): number {
+  if (!stage) return value;
+  return Math.floor(value * statStageMultiplier(stage));
+}
+
+export function applyBattleStatModifiers(stat: StatKey, value: number, context: BattleStatContext = {}): number {
+  let result = value;
+  const item = context.item ?? "";
+  const ability = context.ability ?? "";
+  const weather = context.weather ?? "";
+  const terrain = context.terrain ?? "";
+
+  if (stat === "Spe") {
+    if (ability === "Swift Swim" && weather === "Rain") result *= 2;
+    else if (ability === "Chlorophyll" && weather === "Sun") result *= 2;
+    else if (ability === "Sand Rush" && weather === "Sand") result *= 2;
+    else if (ability === "Slush Rush" && weather === "Snow") result *= 2;
+    else if (ability === "Surge Surfer" && terrain === "Electric") result *= 2;
+  }
+  if (stat === "Atk") {
+    if (["Huge Power", "Pure Power"].includes(ability)) result *= 2;
+    else if (["Gorilla Tactics", "Hustle"].includes(ability)) result = Math.floor(result * 1.5);
+    else if (ability === "Orichalcum Pulse" && weather === "Sun") result = Math.floor(result * 4 / 3);
+  }
+  if (stat === "SpA") {
+    if (ability === "Solar Power" && weather === "Sun") result = Math.floor(result * 1.5);
+    else if (ability === "Hadron Engine" && terrain === "Electric") result = Math.floor(result * 4 / 3);
+  }
+  if (stat === "SpD" && item === "Assault Vest") result = Math.floor(result * 1.5);
+
+  if (stat === "Spe" && item === "Choice Scarf") result = Math.floor(result * 1.5);
+  if (stat === "Atk" && item === "Choice Band") result = Math.floor(result * 1.5);
+  if (stat === "SpA" && item === "Choice Specs") result = Math.floor(result * 1.5);
+
+  return Math.floor(result);
+}
+
+export function calculateEffectiveStat(
+  base: number,
+  ev: number,
+  stat: StatKey,
+  nature: string,
+  context: BattleStatContext = {},
+): number {
+  const baseValue = calculateStat(base, ev, stat, nature);
+  const staged = applyStatStage(baseValue, context.statStage ?? 0);
+  return applyBattleStatModifiers(stat, staged, context);
 }
 
 const image = (id: number) => ({
