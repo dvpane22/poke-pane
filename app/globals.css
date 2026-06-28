@@ -204,7 +204,8 @@ h1,h2,h3 { font-family: "Space Grotesk"; margin: 4px 0; }
 select { width:100%;appearance:none;border:1px solid var(--line);background:#0c1218;color:#dce4e8;border-radius:8px;padding:9px 10px;font-size:11px;outline:none; }
 .loadout-panel { overflow-y:auto;padding:14px; }
 .loadout-details,.nature-section { margin-top:14px; }
-.loadout-panel .build-assist-root.launcher-mode { margin-top:14px;display:grid;justify-items:stretch;width:100%; }
+.loadout-panel .build-assist-root.launcher-mode { margin-top:14px;display:grid;justify-items:stretch;width:100%;z-index:20; }
+.loadout-panel .build-assist-root.launcher-mode.open { z-index:45; }
 .loadout-panel .build-assist-root.launcher-mode .build-assist-launcher { width:100%;justify-content:center; }
 .loadout-section h3 { margin:0 0 7px;color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em; }
 .moves-grid { display:grid;grid-template-columns:1fr;gap:6px; }
