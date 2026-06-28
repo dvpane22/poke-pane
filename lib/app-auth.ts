@@ -5,6 +5,7 @@ function readAppPassword() {
 }
 
 export function isAppPasswordEnabled() {
+  if (process.env.NODE_ENV !== "production") return false;
   return Boolean(readAppPassword());
 }
 

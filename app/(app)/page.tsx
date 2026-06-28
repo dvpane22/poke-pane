@@ -729,6 +729,7 @@ function PokemonEditor({
               {!!data.megaForms?.length && (
                 <MegaToggle forms={data.megaForms} selected={megaForm?.name ?? null} select={(name) => update({ megaForm: name ?? undefined })} />
               )}
+              <span className="ev-budget">{CHAMPIONS_STAT_POINT_TOTAL - Object.values(build.evs).reduce((sum, statValue) => sum + (Number.isFinite(statValue) ? statValue : 0), 0)} SP left</span>
               <button
                 type="button"
                 className={`stat-view-toggle ${showStatPreview ? "active" : ""}`}
@@ -739,7 +740,6 @@ function PokemonEditor({
                 <span>Stat preview</span>
               </button>
               <BaseStatsToggle active={showBaseStats} onToggle={() => setShowBaseStats((value) => !value)} />
-              <span className="ev-budget">{CHAMPIONS_STAT_POINT_TOTAL - Object.values(build.evs).reduce((sum, statValue) => sum + (Number.isFinite(statValue) ? statValue : 0), 0)} Stat Points left</span>
               <button
                 className="reset-stats"
                 type="button"
@@ -942,27 +942,37 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
     ? { HP: "HP", Atk: "Atk", Def: "Def", SpA: "SpA", SpD: "SpD", Spe: "Spe" }
     : { HP: "HP", Atk: "Attack", Def: "Defense", SpA: "Sp. Atk", SpD: "Sp. Def", Spe: "Speed" };
   const baseStats = megaForm?.stats ?? data.stats;
-  const pad = compact ? 38 : 56;
+  const pad = compact ? 96 : 56;
   const viewSize = 240 + pad * 2;
   const centerX = 120 + pad;
   const centerY = 120 + pad;
-  const radius = compact ? 86 : 114;
+  const radius = compact ? 108 : 114;
+  const nodeRadius = compact ? 116 : radius;
   const minRatio = 0.34;
-  const nodeOffset = compact ? 7 : 14;
-  const topNodeOffset = compact ? 4 : 10;
-  const handleRadius = compact ? 4.5 : 5.5;
-  const nodeTransforms = [
-    `translate(-50%, calc(-100% - ${topNodeOffset}px))`,
-    `translate(${nodeOffset}px, -50%)`,
-    `translate(${nodeOffset}px, -50%)`,
-    `translate(-50%, ${nodeOffset}px)`,
-    `translate(calc(-100% - ${nodeOffset}px), -50%)`,
-    `translate(calc(-100% - ${nodeOffset}px), -50%)`,
-  ];
-  const point = (index: number, ratio: number) => {
+  const nodeOffset = compact ? 6 : 14;
+  const topNodeOffset = compact ? 5 : 10;
+  const handleRadius = compact ? 5 : 5.5;
+  const nodeTransforms = compact
+    ? [
+        `translate(-50%, calc(-100% - ${topNodeOffset}px))`,
+        `translate(${nodeOffset}px, calc(-100% - ${nodeOffset}px))`,
+        `translate(${nodeOffset}px, ${nodeOffset}px)`,
+        `translate(-50%, ${nodeOffset}px)`,
+        `translate(calc(-100% - ${nodeOffset}px), ${nodeOffset}px)`,
+        `translate(calc(-100% - ${nodeOffset}px), calc(-100% - ${nodeOffset}px))`,
+      ]
+    : [
+        `translate(-50%, calc(-100% - ${topNodeOffset}px))`,
+        `translate(${nodeOffset}px, -50%)`,
+        `translate(${nodeOffset}px, -50%)`,
+        `translate(-50%, ${nodeOffset}px)`,
+        `translate(calc(-100% - ${nodeOffset}px), -50%)`,
+        `translate(calc(-100% - ${nodeOffset}px), -50%)`,
+      ];
+  const point = (index: number, ratio: number, pointRadius = radius) => {
     const angle = -Math.PI / 2 + (index * Math.PI * 2) / 6;
     const safeRatio = Number.isFinite(ratio) ? ratio : minRatio;
-    return [centerX + Math.cos(angle) * radius * safeRatio, centerY + Math.sin(angle) * radius * safeRatio];
+    return [centerX + Math.cos(angle) * pointRadius * safeRatio, centerY + Math.sin(angle) * pointRadius * safeRatio];
   };
   const safeEv = (stat: StatKey) => {
     const ev = build.evs[stat];
@@ -998,7 +1008,7 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
   };
   const statNode = (stat: StatKey, index: number) => {
     const effect = getNatureEffect(build.nature, stat);
-    const [x, y] = point(index, 1);
+    const [x, y] = point(index, 1, nodeRadius);
     return (
       <div
         className="radar-stat-node"
