@@ -26,6 +26,17 @@ import { CHAMPIONS_STAT_POINT_MAX, CHAMPIONS_STAT_POINT_TOTAL, formatMegaDisplay
 
 const STAT_KEYS: StatKey[] = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"];
 
+function isMobileViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
+}
+
+function dismissKeyboard(input?: HTMLTextAreaElement | null) {
+  input?.blur();
+  if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+}
+
 function collectPriorSuggestedSpecies(turns: BuildAssistTurn[], beforeIndex = turns.length) {
   const species: string[] = [];
   const seen = new Set<string>();
@@ -112,11 +123,44 @@ export function BuildAssistBubble({
   const selectedName = context.pokemon.find((mon) => mon.selected)?.displayName ?? null;
 
   useEffect(() => {
+    if (!open || isPanelMode || !isMobileViewport()) return;
+
+    const scrollY = window.scrollY;
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousPosition = body.style.position;
+    const previousTop = body.style.top;
+    const previousWidth = body.style.width;
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.position = previousPosition;
+      body.style.top = previousTop;
+      body.style.width = previousWidth;
+      window.scrollTo(0, scrollY);
+    };
+  }, [open, isPanelMode]);
+
+  useEffect(() => {
     if (!open) return;
     scrollPinnedRef.current = true;
     scrollToBottom(true);
+    if (isMobileViewport()) {
+      dismissKeyboard(inputRef.current);
+      return;
+    }
     inputRef.current?.focus();
   }, [open]);
+
+  useEffect(() => {
+    if (!loading) return;
+    dismissKeyboard(inputRef.current);
+  }, [loading]);
 
   useEffect(() => {
     scrollToBottom();
@@ -161,6 +205,7 @@ export function BuildAssistBubble({
     streamReplyRef.current = "";
     scrollPinnedRef.current = true;
     scrollToBottom(true);
+    dismissKeyboard(inputRef.current);
     setLoading(true);
 
     try {

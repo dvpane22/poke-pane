@@ -930,6 +930,7 @@ function MegaToggle({ forms, selected, select, compact = false }: { forms: MegaF
 
 function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBaseStats }: { data: PokemonData; megaForm: MegaForm | null; build: PokemonBuild; updateStat: (stat: StatKey, value: number) => void; showStatPreview: boolean; showBaseStats: boolean }) {
   const stats: StatKey[] = ["HP", "Atk", "Def", "Spe", "SpD", "SpA"];
+  const draggingHandleRef = useRef(false);
   const [compact, setCompact] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 760px)");
@@ -937,6 +938,29 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
     sync();
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
+  }, []);
+  useEffect(() => {
+    const preventHandleScroll = (event: TouchEvent) => {
+      if (!draggingHandleRef.current || !event.cancelable) return;
+      event.preventDefault();
+    };
+    const clearDrag = () => {
+      draggingHandleRef.current = false;
+    };
+
+    document.addEventListener("touchmove", preventHandleScroll, { passive: false });
+    document.addEventListener("touchend", clearDrag);
+    document.addEventListener("touchcancel", clearDrag);
+    window.addEventListener("pointerup", clearDrag);
+    window.addEventListener("pointercancel", clearDrag);
+
+    return () => {
+      document.removeEventListener("touchmove", preventHandleScroll);
+      document.removeEventListener("touchend", clearDrag);
+      document.removeEventListener("touchcancel", clearDrag);
+      window.removeEventListener("pointerup", clearDrag);
+      window.removeEventListener("pointercancel", clearDrag);
+    };
   }, []);
   const labels: Record<StatKey, string> = compact
     ? { HP: "HP", Atk: "Atk", Def: "Def", SpA: "SpA", SpD: "SpD", Spe: "Spe" }
@@ -1062,31 +1086,61 @@ function StatRadar({ data, megaForm, build, updateStat, showStatPreview, showBas
           <polygon className="radar-shape" points={polygon} />
           {stats.map((stat, index) => {
             const [x, y] = point(index, evRatios[index]);
+            const startDrag = (event: React.PointerEvent<SVGCircleElement>) => {
+              draggingHandleRef.current = true;
+              event.preventDefault();
+              event.stopPropagation();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              dragStat(event, stat, index);
+            };
+            const moveDrag = (event: React.PointerEvent<SVGCircleElement>) => {
+              if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+              event.preventDefault();
+              event.stopPropagation();
+              dragStat(event, stat, index);
+            };
+            const endDrag = (event: React.PointerEvent<SVGCircleElement>) => {
+              draggingHandleRef.current = false;
+              if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+              }
+            };
             return (
-              <circle
-                className="radar-handle"
-                key={stat}
-                cx={x}
-                cy={y}
-                r={handleRadius}
-                role="slider"
-                tabIndex={0}
-                aria-label={`${labels[stat]} Stat Points`}
-                aria-valuemin={0}
-                aria-valuemax={CHAMPIONS_STAT_POINT_MAX}
-                aria-valuenow={safeEv(stat)}
-                onKeyDown={(event) => {
-                  if (event.key === "ArrowUp" || event.key === "ArrowRight") updateStat(stat, safeEv(stat) + 1);
-                  if (event.key === "ArrowDown" || event.key === "ArrowLeft") updateStat(stat, safeEv(stat) - 1);
-                }}
-                onPointerDown={(event) => {
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  dragStat(event, stat, index);
-                }}
-                onPointerMove={(event) => {
-                  if (event.currentTarget.hasPointerCapture(event.pointerId)) dragStat(event, stat, index);
-                }}
-              />
+              <Fragment key={stat}>
+                <circle
+                  className="radar-handle-hit"
+                  cx={x}
+                  cy={y}
+                  r={compact ? 18 : 14}
+                  aria-hidden="true"
+                  onPointerDown={startDrag}
+                  onPointerMove={moveDrag}
+                  onPointerUp={endDrag}
+                  onPointerCancel={endDrag}
+                  onLostPointerCapture={endDrag}
+                />
+                <circle
+                  className="radar-handle"
+                  cx={x}
+                  cy={y}
+                  r={handleRadius}
+                  role="slider"
+                  tabIndex={0}
+                  aria-label={`${labels[stat]} Stat Points`}
+                  aria-valuemin={0}
+                  aria-valuemax={CHAMPIONS_STAT_POINT_MAX}
+                  aria-valuenow={safeEv(stat)}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowUp" || event.key === "ArrowRight") updateStat(stat, safeEv(stat) + 1);
+                    if (event.key === "ArrowDown" || event.key === "ArrowLeft") updateStat(stat, safeEv(stat) - 1);
+                  }}
+                  onPointerDown={startDrag}
+                  onPointerMove={moveDrag}
+                  onPointerUp={endDrag}
+                  onPointerCancel={endDrag}
+                  onLostPointerCapture={endDrag}
+                />
+              </Fragment>
             );
           })}
         </svg>
@@ -1386,6 +1440,7 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
   const [focused, setFocused] = useState("");
   const [pinned, setPinned] = useState("");
   const [moveTab, setMoveTab] = useState("Recommended");
+  const [moveTypeFilter, setMoveTypeFilter] = useState<string | null>(null);
   const [itemTab, setItemTab] = useState("Recommended");
   const title = choice.kind === "item" ? "Choose a held item" : choice.kind === "ability" ? "Choose an ability" : `Choose move ${(choice.moveIndex ?? 0) + 1}`;
   const current = choice.kind === "item" ? build.item : choice.kind === "ability" ? build.ability : build.moves[choice.moveIndex ?? 0];
@@ -1398,8 +1453,21 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
         return duplicateIndex < 0;
       });
   const filtered = options.filter((option) => option.toLowerCase().includes(query.toLowerCase()));
-  const pinnedActive = pinned && filtered.includes(pinned) ? pinned : "";
-  const active = pinnedActive || focused || (current && filtered.includes(current) ? current : "");
+  const moveTypesAvailable = useMemo(() => {
+    if (choice.kind !== "move") return [] as string[];
+    const types = new Set<string>();
+    for (const move of options) {
+      const type = OPTION_DETAILS.moves[move]?.type;
+      if (type) types.add(type);
+    }
+    return [...types].sort((a, b) => a.localeCompare(b));
+  }, [choice.kind, options]);
+  const movePoolFiltered = choice.kind === "move" && moveTypeFilter
+    ? filtered.filter((option) => OPTION_DETAILS.moves[option]?.type === moveTypeFilter)
+    : filtered;
+  const selectionPool = choice.kind === "move" ? movePoolFiltered : filtered;
+  const pinnedActive = pinned && selectionPool.includes(pinned) ? pinned : "";
+  const active = pinnedActive || focused || (current && selectionPool.includes(current) ? current : "");
   const details = choice.kind === "item"
     ? OPTION_DETAILS.items[active]
     : choice.kind === "ability"
@@ -1415,11 +1483,11 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
       ? `${moveDetails.accuracy}%`
       : "--";
   const recommended = choice.kind === "move"
-    ? [...filtered].sort((a, b) => moveUsefulness(b, data) - moveUsefulness(a, data)).slice(0, 6)
+    ? [...movePoolFiltered].sort((a, b) => moveUsefulness(b, data) - moveUsefulness(a, data)).slice(0, 6)
     : ITEM_RECOMMENDATIONS.filter((item) => filtered.includes(item)).slice(0, 6);
   const moveTabs = [
     { name: "Recommended", count: recommended.length },
-    ...["Physical", "Special", "Status"].map((category) => ({ name: category, count: filtered.filter((option) => OPTION_DETAILS.moves[option]?.category === category).length })),
+    ...["Physical", "Special", "Status"].map((category) => ({ name: category, count: movePoolFiltered.filter((option) => OPTION_DETAILS.moves[option]?.category === category).length })),
   ];
   const itemTabs = [
     { name: "Recommended", count: recommended.length },
@@ -1427,14 +1495,19 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
   ];
   const getMoveTabOptions = (tab: string) => tab === "Recommended"
     ? recommended
-    : filtered.filter((option) => OPTION_DETAILS.moves[option]?.category === tab).sort((a, b) => moveUsefulness(b, data) - moveUsefulness(a, data));
+    : movePoolFiltered.filter((option) => OPTION_DETAILS.moves[option]?.category === tab).sort((a, b) => moveUsefulness(b, data) - moveUsefulness(a, data));
   const getItemTabOptions = (tab: string) => tab === "Recommended"
     ? recommended
     : filtered.filter((option) => itemCategory(option) === tab);
   const searching = query.trim().length > 0;
   const moveTabOptions = searching
-    ? [...filtered].sort((a, b) => moveUsefulness(b, data) - moveUsefulness(a, data))
+    ? [...movePoolFiltered].sort((a, b) => moveUsefulness(b, data) - moveUsefulness(a, data))
     : getMoveTabOptions(moveTab);
+  const moveResultsLabel = searching
+    ? "Search results"
+    : moveTypeFilter && moveTab !== "Recommended"
+      ? `${moveTypeFilter} · ${moveTab}`
+      : moveTypeFilter ?? moveTab;
   const itemTabOptions = searching
     ? [...filtered].sort((a, b) => a.localeCompare(b))
     : getItemTabOptions(itemTab);
@@ -1502,7 +1575,7 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
         ) : choice.kind === "item" ? (
           <div className="move-browser item-browser">
               <div className="move-browser-controls">
-              <div className="search-box"><Search size={17} /><input autoFocus placeholder="Search items..." value={query} onChange={(event) => { setQuery(event.target.value); setFocused(""); }} onKeyDown={(event) => { if (event.key === "Enter" && active) { event.preventDefault(); event.stopPropagation(); select(active); } }} /></div>
+              <div className="search-box"><Search size={17} /><input placeholder="Search items..." value={query} onChange={(event) => { setQuery(event.target.value); setFocused(""); }} onKeyDown={(event) => { if (event.key === "Enter" && active) { event.preventDefault(); event.stopPropagation(); select(active); } }} /></div>
               <div className={`move-category-tabs${searching ? " is-dimmed" : ""}`} role="tablist" aria-label="Item categories">
                 {itemTabs.map((tab) => (
                   <button
@@ -1555,7 +1628,7 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
                 })}
               </div>
             </div>
-            <div className="move-preview-footer">
+            <div className="move-preview-footer" data-preview-empty={active ? undefined : "true"}>
               <div className="move-preview-identity">
                 <ItemSprite name={active} category={activeItemCategory} size={44} />
                 <span>
@@ -1579,7 +1652,7 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
         ) : choice.kind === "move" ? (
           <div className={`move-browser move-detail-${moveType || "normal"}`}>
             <div className="move-browser-controls">
-              <div className="search-box"><Search size={17} /><input autoFocus placeholder="Search moves..." value={query} onChange={(event) => { setQuery(event.target.value); setFocused(""); }} onKeyDown={(event) => { if (event.key === "Enter" && active) { event.preventDefault(); event.stopPropagation(); select(active); } }} /></div>
+              <div className="search-box"><Search size={17} /><input placeholder="Search moves..." value={query} onChange={(event) => { setQuery(event.target.value); setFocused(""); }} onKeyDown={(event) => { if (event.key === "Enter" && active) { event.preventDefault(); event.stopPropagation(); select(active); } }} /></div>
               <div className={`move-category-tabs${searching ? " is-dimmed" : ""}`} role="tablist" aria-label="Move categories">
                 {moveTabs.map((tab) => (
                   <button
@@ -1598,10 +1671,37 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
                   </button>
                 ))}
               </div>
+              {moveTypesAvailable.length >= 2 ? (
+                <div className={`move-type-tabs${searching ? " is-dimmed" : ""}`} role="tablist" aria-label="Move types in this Pokémon's learnset">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={!moveTypeFilter}
+                    className={`move-type-tab all-types${!moveTypeFilter ? " active" : ""}`}
+                    onClick={() => setMoveTypeFilter(null)}
+                  >
+                    All
+                  </button>
+                  {moveTypesAvailable.map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      role="tab"
+                      aria-selected={moveTypeFilter === type}
+                      className={`move-type-tab${moveTypeFilter === type ? " active" : ""}`}
+                      onClick={() => setMoveTypeFilter(type)}
+                      aria-label={type}
+                      title={type}
+                    >
+                      <MoveTypeIcon type={type} size={28} />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
             <div className="move-browser-results" role="tabpanel">
               <div className="move-browser-heading">
-                <span>{searching ? "Search results" : moveTab}</span>
+                <span>{moveResultsLabel}</span>
                 <small>{moveTabOptions.length} moves</small>
               </div>
               <div className="move-browser-grid">
@@ -1635,7 +1735,7 @@ function LoadoutChoiceSheet({ choice, data, build, close, select }: {
                 })}
               </div>
             </div>
-            <div className="move-preview-footer">
+            <div className="move-preview-footer" data-preview-empty={active ? undefined : "true"}>
               <div className="move-preview-identity">
                 <MoveTypeIcon type={moveDetails?.type} size={44} />
                 <span>
@@ -2870,8 +2970,71 @@ function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
     setSubmittedQuestion(question);
     setOpen(true);
   };
+  const hasPinnedResults = pinnedCalcs.some(({ answer: pinnedAnswer }) => pinnedAnswer.currentRange || pinnedAnswer.currentCheck);
+  const renderCoachPinStack = (placement: "strip" | "scroll") => (
+    <div
+      className={`coach-pin-stack coach-pin-stack-${placement} ${hasPinnedResults ? "" : "empty"}`}
+      aria-label={`${pinnedCalcs.length} pinned coach results`}
+    >
+      {hasPinnedResults ? (
+        pinnedCalcs.map(({ question, answer: pinnedAnswer }) => {
+          const pinLayout = layoutByQuestion[question] ?? buildDefaultInspectorLayout(pinnedAnswer, team);
+          return pinnedAnswer.currentRange ? (
+            <PinnedDamageVis
+              key={question}
+              range={
+                (question === inspectorQuestion && inspectorLivePreview?.question === question && inspectorLivePreview.range)
+                  ? inspectorLivePreview.range
+                  : resolvePinnedCoachRange(question, pinnedAnswer, team, selectedId, pinLayout)
+                  ?? pinnedAnswer.currentRange!
+              }
+              mode={
+                question === inspectorQuestion && inspectorLivePreview?.question === question
+                  ? inspectorLivePreview.mode
+                  : pinnedAnswer.mode
+              }
+              title={pinnedAnswer.title}
+              selected={question === inspectorQuestion}
+              onSelect={() => inspectPinnedCalc(question)}
+              onUnpin={() => unpinCalc(question)}
+            />
+          ) : pinnedAnswer.currentCheck ? (
+            <PinnedCheckVis
+              key={question}
+              check={
+                (question === inspectorQuestion && inspectorLivePreview?.question === question && inspectorLivePreview.check)
+                  ? inspectorLivePreview.check
+                  : resolvePinnedCoachCheck(question, pinnedAnswer, team, selectedId, pinLayout)
+                  ?? pinnedAnswer.currentCheck
+              }
+              selected={question === inspectorQuestion}
+              onSelect={() => inspectPinnedCalc(question)}
+              onUnpin={() => unpinCalc(question)}
+            />
+          ) : null;
+        })
+      ) : (
+        <span className="coach-pin-empty">Pinned calcs</span>
+      )}
+    </div>
+  );
   return (
-    <section className={`coach-drawer ${open ? "open" : ""}`}>
+    <>
+      {open ? (
+        <button
+          className="coach-drawer-backdrop"
+          type="button"
+          aria-label="Close Pane Coach"
+          onClick={() => setOpen(false)}
+        />
+      ) : null}
+      <section className={`coach-drawer ${open ? "open" : ""}`}>
+      {open ? (
+        <button className="coach-drawer-header" type="button" aria-label="Close damage calc" onClick={() => setOpen(false)}>
+          <div className="coach-drawer-handle" aria-hidden="true" />
+          <span className="coach-drawer-header-title">Damage calc</span>
+        </button>
+      ) : null}
       <div className="coach-strip">
         <button className="coach-identity" type="button" onClick={() => setOpen(!open)} aria-expanded={open}>
           <span className="coach-avatar"><Swords size={17} /></span>
@@ -2971,51 +3134,14 @@ function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
           ) : null}
           <button className="coach-strip-submit" type="submit" aria-label="Ask Pane Coach" disabled={!guidedCanAsk}><ArrowUp size={16} /></button>
         </form>
-        <div className={`coach-pin-stack ${pinnedCalcs.some(({ answer: pinnedAnswer }) => pinnedAnswer.currentRange || pinnedAnswer.currentCheck) ? "" : "empty"}`} aria-label={`${pinnedCalcs.length} pinned coach results`}>
-          {pinnedCalcs.some(({ answer: pinnedAnswer }) => pinnedAnswer.currentRange || pinnedAnswer.currentCheck) ? (
-            pinnedCalcs.map(({ question, answer: pinnedAnswer }) => {
-              const pinLayout = layoutByQuestion[question] ?? buildDefaultInspectorLayout(pinnedAnswer, team);
-              return pinnedAnswer.currentRange ? (
-                <PinnedDamageVis
-                  key={question}
-                  range={
-                    (question === inspectorQuestion && inspectorLivePreview?.question === question && inspectorLivePreview.range)
-                      ? inspectorLivePreview.range
-                      : resolvePinnedCoachRange(question, pinnedAnswer, team, selectedId, pinLayout)
-                      ?? pinnedAnswer.currentRange!
-                  }
-                  mode={
-                    question === inspectorQuestion && inspectorLivePreview?.question === question
-                      ? inspectorLivePreview.mode
-                      : pinnedAnswer.mode
-                  }
-                  title={pinnedAnswer.title}
-                  selected={question === inspectorQuestion}
-                  onSelect={() => inspectPinnedCalc(question)}
-                  onUnpin={() => unpinCalc(question)}
-                />
-              ) : pinnedAnswer.currentCheck ? (
-                <PinnedCheckVis
-                  key={question}
-                  check={
-                    (question === inspectorQuestion && inspectorLivePreview?.question === question && inspectorLivePreview.check)
-                      ? inspectorLivePreview.check
-                      : resolvePinnedCoachCheck(question, pinnedAnswer, team, selectedId, pinLayout)
-                      ?? pinnedAnswer.currentCheck
-                  }
-                  selected={question === inspectorQuestion}
-                  onSelect={() => inspectPinnedCalc(question)}
-                  onUnpin={() => unpinCalc(question)}
-                />
-              ) : null;
-            })
-          ) : (
-            <span className="coach-pin-empty">Pinned calcs</span>
-          )}
-        </div>
-        <button className="expand-coach" type="button" onClick={() => setOpen(!open)} aria-label={open ? "Close Pane Coach" : "Open Pane Coach"}>{open ? <ChevronDown size={18} /> : <ChevronUp size={18} />}</button>
+        {renderCoachPinStack("strip")}
+        <button className="expand-coach" type="button" onClick={() => setOpen(!open)} aria-label={open ? "Close Pane Coach" : "Open Pane Coach"}>
+          {open ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+          {open ? <span className="expand-coach-label">Close</span> : null}
+        </button>
       </div>
       <div className="coach-content">
+        {renderCoachPinStack("scroll")}
         <div className="coach-column coach-conversation">
           {!inspectorAnswer || !inspectorQuestion ? (
             <div className="coach-empty">
@@ -3043,7 +3169,13 @@ function CoachDrawer({ open, setOpen, team, selectedId, applySpread }: {
           )}
         </div>
       </div>
+      {open ? (
+        <div className="coach-drawer-footer">
+          <button className="coach-drawer-done" type="button" onClick={() => setOpen(false)}>Done</button>
+        </div>
+      ) : null}
     </section>
+    </>
   );
 }
 
