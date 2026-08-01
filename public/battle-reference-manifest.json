@@ -1,0 +1,2180 @@
+{
+  "version": 1,
+  "references": [
+    {
+      "id": "basculegion",
+      "name": "Basculegion",
+      "dex": 902,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/basculegion.png",
+      "assets": [
+        "/champions-menu-sprites/0902.png"
+      ]
+    },
+    {
+      "id": "garchomp",
+      "name": "Garchomp",
+      "dex": 445,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/garchomp.png",
+      "assets": [
+        "/champions-menu-sprites/0445-mega.png",
+        "/champions-menu-sprites/0445.png"
+      ]
+    },
+    {
+      "id": "sneasler",
+      "name": "Sneasler",
+      "dex": 903,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sneasler.png",
+      "assets": [
+        "/champions-menu-sprites/0903.png"
+      ]
+    },
+    {
+      "id": "kingambit",
+      "name": "Kingambit",
+      "dex": 983,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/kingambit.png",
+      "assets": [
+        "/champions-menu-sprites/0983.png"
+      ]
+    },
+    {
+      "id": "incineroar",
+      "name": "Incineroar",
+      "dex": 727,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/incineroar.png",
+      "assets": [
+        "/champions-menu-sprites/0727.png"
+      ]
+    },
+    {
+      "id": "sinistcha",
+      "name": "Sinistcha",
+      "dex": 1013,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sinistcha.png",
+      "assets": [
+        "/champions-menu-sprites/1013.png"
+      ]
+    },
+    {
+      "id": "farigiraf",
+      "name": "Farigiraf",
+      "dex": 981,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/farigiraf.png",
+      "assets": [
+        "/champions-menu-sprites/0981.png"
+      ]
+    },
+    {
+      "id": "archaludon",
+      "name": "Archaludon",
+      "dex": 1018,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/archaludon.png",
+      "assets": [
+        "/champions-menu-sprites/1018.png"
+      ]
+    },
+    {
+      "id": "whimsicott",
+      "name": "Whimsicott",
+      "dex": 547,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/whimsicott.png",
+      "assets": [
+        "/champions-menu-sprites/0547.png"
+      ]
+    },
+    {
+      "id": "pelipper",
+      "name": "Pelipper",
+      "dex": 279,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pelipper.png",
+      "assets": [
+        "/champions-menu-sprites/0279.png"
+      ]
+    },
+    {
+      "id": "sylveon",
+      "name": "Sylveon",
+      "dex": 700,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sylveon.png",
+      "assets": [
+        "/champions-menu-sprites/0700.png"
+      ]
+    },
+    {
+      "id": "rotom-wash",
+      "name": "Rotom-Wash",
+      "dex": 479,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rotom-wash.png",
+      "assets": [
+        "/champions-menu-sprites/0479-wash.png"
+      ]
+    },
+    {
+      "id": "sableye",
+      "name": "Sableye",
+      "dex": 302,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sableye.png",
+      "assets": [
+        "/champions-menu-sprites/0302-mega.png",
+        "/champions-menu-sprites/0302.png"
+      ]
+    },
+    {
+      "id": "aerodactyl",
+      "name": "Aerodactyl",
+      "dex": 142,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/aerodactyl.png",
+      "assets": [
+        "/champions-menu-sprites/0142-mega.png",
+        "/champions-menu-sprites/0142.png"
+      ]
+    },
+    {
+      "id": "milotic",
+      "name": "Milotic",
+      "dex": 350,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/milotic.png",
+      "assets": [
+        "/champions-menu-sprites/0350.png"
+      ]
+    },
+    {
+      "id": "torkoal",
+      "name": "Torkoal",
+      "dex": 324,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/torkoal.png",
+      "assets": [
+        "/champions-menu-sprites/0324.png"
+      ]
+    },
+    {
+      "id": "aegislash",
+      "name": "Aegislash",
+      "dex": 681,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/aegislash.png",
+      "assets": [
+        "/champions-menu-sprites/0681.png"
+      ]
+    },
+    {
+      "id": "talonflame",
+      "name": "Talonflame",
+      "dex": 663,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/talonflame.png",
+      "assets": [
+        "/champions-menu-sprites/0663.png"
+      ]
+    },
+    {
+      "id": "maushold",
+      "name": "Maushold",
+      "dex": 925,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/maushold.png",
+      "assets": [
+        "/champions-menu-sprites/0925.png"
+      ]
+    },
+    {
+      "id": "corviknight",
+      "name": "Corviknight",
+      "dex": 823,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/corviknight.png",
+      "assets": [
+        "/champions-menu-sprites/0823.png"
+      ]
+    },
+    {
+      "id": "ninetales-alola",
+      "name": "Ninetales-Alola",
+      "dex": 38,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/ninetales-alola.png",
+      "assets": [
+        "/champions-menu-sprites/0038-alola.png"
+      ]
+    },
+    {
+      "id": "kommo-o",
+      "name": "Kommo-o",
+      "dex": 784,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/kommoo.png",
+      "assets": [
+        "/champions-menu-sprites/0784.png"
+      ]
+    },
+    {
+      "id": "politoed",
+      "name": "Politoed",
+      "dex": 186,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/politoed.png",
+      "assets": [
+        "/champions-menu-sprites/0186.png"
+      ]
+    },
+    {
+      "id": "excadrill",
+      "name": "Excadrill",
+      "dex": 530,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/excadrill.png",
+      "assets": [
+        "/champions-menu-sprites/0530-mega.png",
+        "/champions-menu-sprites/0530.png"
+      ]
+    },
+    {
+      "id": "primarina",
+      "name": "Primarina",
+      "dex": 730,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/primarina.png",
+      "assets": [
+        "/champions-menu-sprites/0730.png"
+      ]
+    },
+    {
+      "id": "glimmora",
+      "name": "Glimmora",
+      "dex": 970,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/glimmora.png",
+      "assets": [
+        "/champions-menu-sprites/0970-mega.png",
+        "/champions-menu-sprites/0970.png"
+      ]
+    },
+    {
+      "id": "tsareena",
+      "name": "Tsareena",
+      "dex": 763,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tsareena.png",
+      "assets": [
+        "/champions-menu-sprites/0763.png"
+      ]
+    },
+    {
+      "id": "hydreigon",
+      "name": "Hydreigon",
+      "dex": 635,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hydreigon.png",
+      "assets": [
+        "/champions-menu-sprites/0635.png"
+      ]
+    },
+    {
+      "id": "tyranitar",
+      "name": "Tyranitar",
+      "dex": 248,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tyranitar.png",
+      "assets": [
+        "/champions-menu-sprites/0248-mega.png",
+        "/champions-menu-sprites/0248.png"
+      ]
+    },
+    {
+      "id": "dragapult",
+      "name": "Dragapult",
+      "dex": 887,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/dragapult.png",
+      "assets": [
+        "/champions-menu-sprites/0887.png"
+      ]
+    },
+    {
+      "id": "venusaur",
+      "name": "Venusaur",
+      "dex": 3,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/venusaur.png",
+      "assets": [
+        "/champions-menu-sprites/0003-mega.png",
+        "/champions-menu-sprites/0003.png"
+      ]
+    },
+    {
+      "id": "dragonite",
+      "name": "Dragonite",
+      "dex": 149,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/dragonite.png",
+      "assets": [
+        "/champions-menu-sprites/0149-mega.png",
+        "/champions-menu-sprites/0149.png"
+      ]
+    },
+    {
+      "id": "kangaskhan",
+      "name": "Kangaskhan",
+      "dex": 115,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/kangaskhan.png",
+      "assets": [
+        "/champions-menu-sprites/0115-mega.png",
+        "/champions-menu-sprites/0115.png"
+      ]
+    },
+    {
+      "id": "vivillon",
+      "name": "Vivillon",
+      "dex": 666,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/vivillon.png",
+      "assets": [
+        "/champions-menu-sprites/0666.png"
+      ]
+    },
+    {
+      "id": "rotom-heat",
+      "name": "Rotom-Heat",
+      "dex": 479,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rotom-heat.png",
+      "assets": [
+        "/champions-menu-sprites/0479-heat.png"
+      ]
+    },
+    {
+      "id": "oranguru",
+      "name": "Oranguru",
+      "dex": 765,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/oranguru.png",
+      "assets": [
+        "/champions-menu-sprites/0765.png"
+      ]
+    },
+    {
+      "id": "zoroark-hisui",
+      "name": "Zoroark-Hisui",
+      "dex": 571,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/zoroark-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0571-hisui.png"
+      ]
+    },
+    {
+      "id": "gallade",
+      "name": "Gallade",
+      "dex": 475,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gallade.png",
+      "assets": [
+        "/champions-menu-sprites/0475-mega.png",
+        "/champions-menu-sprites/0475.png"
+      ]
+    },
+    {
+      "id": "ceruledge",
+      "name": "Ceruledge",
+      "dex": 937,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/ceruledge.png",
+      "assets": [
+        "/champions-menu-sprites/0937.png"
+      ]
+    },
+    {
+      "id": "volcarona",
+      "name": "Volcarona",
+      "dex": 637,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/volcarona.png",
+      "assets": [
+        "/champions-menu-sprites/0637.png"
+      ]
+    },
+    {
+      "id": "typhlosion-hisui",
+      "name": "Typhlosion-Hisui",
+      "dex": 157,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/typhlosion-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0157-hisui.png"
+      ]
+    },
+    {
+      "id": "meowscarada",
+      "name": "Meowscarada",
+      "dex": 908,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/meowscarada.png",
+      "assets": [
+        "/champions-menu-sprites/0908.png"
+      ]
+    },
+    {
+      "id": "espathra",
+      "name": "Espathra",
+      "dex": 956,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/espathra.png",
+      "assets": [
+        "/champions-menu-sprites/0956.png"
+      ]
+    },
+    {
+      "id": "snorlax",
+      "name": "Snorlax",
+      "dex": 143,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/snorlax.png",
+      "assets": [
+        "/champions-menu-sprites/0143.png"
+      ]
+    },
+    {
+      "id": "tinkaton",
+      "name": "Tinkaton",
+      "dex": 959,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tinkaton.png",
+      "assets": [
+        "/champions-menu-sprites/0959.png"
+      ]
+    },
+    {
+      "id": "heliolisk",
+      "name": "Heliolisk",
+      "dex": 695,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/heliolisk.png",
+      "assets": [
+        "/champions-menu-sprites/0695.png"
+      ]
+    },
+    {
+      "id": "palafin",
+      "name": "Palafin",
+      "dex": 964,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/palafin.png",
+      "assets": [
+        "/champions-menu-sprites/0964.png"
+      ]
+    },
+    {
+      "id": "araquanid",
+      "name": "Araquanid",
+      "dex": 752,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/araquanid.png",
+      "assets": [
+        "/champions-menu-sprites/0752.png"
+      ]
+    },
+    {
+      "id": "arcanine-hisui",
+      "name": "Arcanine-Hisui",
+      "dex": 59,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/arcanine-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0059-hisui.png"
+      ]
+    },
+    {
+      "id": "kleavor",
+      "name": "Kleavor",
+      "dex": 900,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/kleavor.png",
+      "assets": [
+        "/champions-menu-sprites/0900.png"
+      ]
+    },
+    {
+      "id": "scizor",
+      "name": "Scizor",
+      "dex": 212,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scizor.png",
+      "assets": [
+        "/champions-menu-sprites/0212-mega.png",
+        "/champions-menu-sprites/0212.png"
+      ]
+    },
+    {
+      "id": "hatterene",
+      "name": "Hatterene",
+      "dex": 858,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hatterene.png",
+      "assets": [
+        "/champions-menu-sprites/0858.png"
+      ]
+    },
+    {
+      "id": "clefable",
+      "name": "Clefable",
+      "dex": 36,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/clefable.png",
+      "assets": [
+        "/champions-menu-sprites/0036-mega.png",
+        "/champions-menu-sprites/0036.png"
+      ]
+    },
+    {
+      "id": "mimikyu",
+      "name": "Mimikyu",
+      "dex": 778,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/mimikyu.png",
+      "assets": [
+        "/champions-menu-sprites/0778.png"
+      ]
+    },
+    {
+      "id": "weavile",
+      "name": "Weavile",
+      "dex": 461,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/weavile.png",
+      "assets": [
+        "/champions-menu-sprites/0461.png"
+      ]
+    },
+    {
+      "id": "tauros-paldea-aqua",
+      "name": "Tauros-Paldea-Aqua",
+      "dex": 128,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tauros-paldeaaqua.png",
+      "assets": [
+        "/champions-menu-sprites/0128-paldea-aqua.png"
+      ]
+    },
+    {
+      "id": "samurott-hisui",
+      "name": "Samurott-Hisui",
+      "dex": 503,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/samurott-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0503-hisui.png"
+      ]
+    },
+    {
+      "id": "azumarill",
+      "name": "Azumarill",
+      "dex": 184,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/azumarill.png",
+      "assets": [
+        "/champions-menu-sprites/0184.png"
+      ]
+    },
+    {
+      "id": "mamoswine",
+      "name": "Mamoswine",
+      "dex": 473,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/mamoswine.png",
+      "assets": [
+        "/champions-menu-sprites/0473.png"
+      ]
+    },
+    {
+      "id": "slowking-galar",
+      "name": "Slowking-Galar",
+      "dex": 199,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/slowking-galar.png",
+      "assets": [
+        "/champions-menu-sprites/0199-galar.png"
+      ]
+    },
+    {
+      "id": "meowstic",
+      "name": "Meowstic",
+      "dex": 678,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/meowstic.png",
+      "assets": [
+        "/champions-menu-sprites/0678-mega.png",
+        "/champions-menu-sprites/0678.png"
+      ]
+    },
+    {
+      "id": "lucario",
+      "name": "Lucario",
+      "dex": 448,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/lucario.png",
+      "assets": [
+        "/champions-menu-sprites/0448-mega.png",
+        "/champions-menu-sprites/0448.png"
+      ]
+    },
+    {
+      "id": "raichu",
+      "name": "Raichu",
+      "dex": 26,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/raichu.png",
+      "assets": [
+        "/champions-menu-sprites/0026.png"
+      ]
+    },
+    {
+      "id": "orthworm",
+      "name": "Orthworm",
+      "dex": 968,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/orthworm.png",
+      "assets": [
+        "/champions-menu-sprites/0968.png"
+      ]
+    },
+    {
+      "id": "conkeldurr",
+      "name": "Conkeldurr",
+      "dex": 534,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/conkeldurr.png",
+      "assets": [
+        "/champions-menu-sprites/0534.png"
+      ]
+    },
+    {
+      "id": "gyarados",
+      "name": "Gyarados",
+      "dex": 130,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gyarados.png",
+      "assets": [
+        "/champions-menu-sprites/0130-mega.png",
+        "/champions-menu-sprites/0130.png"
+      ]
+    },
+    {
+      "id": "bellibolt",
+      "name": "Bellibolt",
+      "dex": 939,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/bellibolt.png",
+      "assets": [
+        "/champions-menu-sprites/0939.png"
+      ]
+    },
+    {
+      "id": "vanilluxe",
+      "name": "Vanilluxe",
+      "dex": 584,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/vanilluxe.png",
+      "assets": [
+        "/champions-menu-sprites/0584.png"
+      ]
+    },
+    {
+      "id": "klefki",
+      "name": "Klefki",
+      "dex": 707,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/klefki.png",
+      "assets": [
+        "/champions-menu-sprites/0707.png"
+      ]
+    },
+    {
+      "id": "goodra-hisui",
+      "name": "Goodra-Hisui",
+      "dex": 706,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/goodra-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0706-hisui.png"
+      ]
+    },
+    {
+      "id": "gengar",
+      "name": "Gengar",
+      "dex": 94,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gengar.png",
+      "assets": [
+        "/champions-menu-sprites/0094-mega.png",
+        "/champions-menu-sprites/0094.png"
+      ]
+    },
+    {
+      "id": "empoleon",
+      "name": "Empoleon",
+      "dex": 395,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/empoleon.png",
+      "assets": [
+        "/champions-menu-sprites/0395.png"
+      ]
+    },
+    {
+      "id": "umbreon",
+      "name": "Umbreon",
+      "dex": 197,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/umbreon.png",
+      "assets": [
+        "/champions-menu-sprites/0197.png"
+      ]
+    },
+    {
+      "id": "ariados",
+      "name": "Ariados",
+      "dex": 168,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/ariados.png",
+      "assets": [
+        "/champions-menu-sprites/0168.png"
+      ]
+    },
+    {
+      "id": "armarouge",
+      "name": "Armarouge",
+      "dex": 936,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/armarouge.png",
+      "assets": [
+        "/champions-menu-sprites/0936.png"
+      ]
+    },
+    {
+      "id": "arcanine",
+      "name": "Arcanine",
+      "dex": 59,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/arcanine.png",
+      "assets": [
+        "/champions-menu-sprites/0059.png"
+      ]
+    },
+    {
+      "id": "gardevoir",
+      "name": "Gardevoir",
+      "dex": 282,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gardevoir.png",
+      "assets": [
+        "/champions-menu-sprites/0282-mega.png",
+        "/champions-menu-sprites/0282.png"
+      ]
+    },
+    {
+      "id": "mudsdale",
+      "name": "Mudsdale",
+      "dex": 750,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/mudsdale.png",
+      "assets": [
+        "/champions-menu-sprites/0750.png"
+      ]
+    },
+    {
+      "id": "basculegion-f",
+      "name": "Basculegion-F",
+      "dex": 902,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/basculegion-f.png",
+      "assets": [
+        "/champions-menu-sprites/0902-female.png"
+      ]
+    },
+    {
+      "id": "chandelure",
+      "name": "Chandelure",
+      "dex": 609,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/chandelure.png",
+      "assets": [
+        "/champions-menu-sprites/0609-mega.png",
+        "/champions-menu-sprites/0609.png"
+      ]
+    },
+    {
+      "id": "rotom-frost",
+      "name": "Rotom-Frost",
+      "dex": 479,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rotom-frost.png",
+      "assets": [
+        "/champions-menu-sprites/0479-frost.png"
+      ]
+    },
+    {
+      "id": "decidueye-hisui",
+      "name": "Decidueye-Hisui",
+      "dex": 724,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/decidueye-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0724-hisui.png"
+      ]
+    },
+    {
+      "id": "toxapex",
+      "name": "Toxapex",
+      "dex": 748,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/toxapex.png",
+      "assets": [
+        "/champions-menu-sprites/0748.png"
+      ]
+    },
+    {
+      "id": "ditto",
+      "name": "Ditto",
+      "dex": 132,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/ditto.png",
+      "assets": [
+        "/champions-menu-sprites/0132.png"
+      ]
+    },
+    {
+      "id": "krookodile",
+      "name": "Krookodile",
+      "dex": 553,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/krookodile.png",
+      "assets": [
+        "/champions-menu-sprites/0553.png"
+      ]
+    },
+    {
+      "id": "wyrdeer",
+      "name": "Wyrdeer",
+      "dex": 899,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/wyrdeer.png",
+      "assets": [
+        "/champions-menu-sprites/0899.png"
+      ]
+    },
+    {
+      "id": "blastoise",
+      "name": "Blastoise",
+      "dex": 9,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/blastoise.png",
+      "assets": [
+        "/champions-menu-sprites/0009-mega.png",
+        "/champions-menu-sprites/0009.png"
+      ]
+    },
+    {
+      "id": "liepard",
+      "name": "Liepard",
+      "dex": 510,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/liepard.png",
+      "assets": [
+        "/champions-menu-sprites/0510.png"
+      ]
+    },
+    {
+      "id": "altaria",
+      "name": "Altaria",
+      "dex": 334,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/altaria.png",
+      "assets": [
+        "/champions-menu-sprites/0334-mega.png",
+        "/champions-menu-sprites/0334.png"
+      ]
+    },
+    {
+      "id": "rotom-mow",
+      "name": "Rotom-Mow",
+      "dex": 479,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rotom-mow.png",
+      "assets": [
+        "/champions-menu-sprites/0479-mow.png"
+      ]
+    },
+    {
+      "id": "alcremie",
+      "name": "Alcremie",
+      "dex": 869,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/alcremie.png",
+      "assets": [
+        "/champions-menu-sprites/0869.png"
+      ]
+    },
+    {
+      "id": "rhyperior",
+      "name": "Rhyperior",
+      "dex": 464,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rhyperior.png",
+      "assets": [
+        "/champions-menu-sprites/0464.png"
+      ]
+    },
+    {
+      "id": "jolteon",
+      "name": "Jolteon",
+      "dex": 135,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/jolteon.png",
+      "assets": [
+        "/champions-menu-sprites/0135.png"
+      ]
+    },
+    {
+      "id": "tauros-paldea-blaze",
+      "name": "Tauros-Paldea-Blaze",
+      "dex": 128,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tauros-paldeablaze.png",
+      "assets": [
+        "/champions-menu-sprites/0128-paldea-blaze.png"
+      ]
+    },
+    {
+      "id": "hydrapple",
+      "name": "Hydrapple",
+      "dex": 1019,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hydrapple.png",
+      "assets": [
+        "/champions-menu-sprites/1019.png"
+      ]
+    },
+    {
+      "id": "drampa",
+      "name": "Drampa",
+      "dex": 780,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/drampa.png",
+      "assets": [
+        "/champions-menu-sprites/0780-mega.png",
+        "/champions-menu-sprites/0780.png"
+      ]
+    },
+    {
+      "id": "slowking",
+      "name": "Slowking",
+      "dex": 199,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/slowking.png",
+      "assets": [
+        "/champions-menu-sprites/0199.png"
+      ]
+    },
+    {
+      "id": "cofagrigus",
+      "name": "Cofagrigus",
+      "dex": 563,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/cofagrigus.png",
+      "assets": [
+        "/champions-menu-sprites/0563.png"
+      ]
+    },
+    {
+      "id": "gliscor",
+      "name": "Gliscor",
+      "dex": 472,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gliscor.png",
+      "assets": [
+        "/champions-menu-sprites/0472.png"
+      ]
+    },
+    {
+      "id": "lycanroc-dusk",
+      "name": "Lycanroc-Dusk",
+      "dex": 745,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/lycanroc-dusk.png",
+      "assets": [
+        "/champions-menu-sprites/0745-dusk.png"
+      ]
+    },
+    {
+      "id": "floette-eternal",
+      "name": "Floette-Eternal",
+      "dex": 670,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/floette-eternal.png",
+      "assets": [
+        "/champions-menu-sprites/0670-eternal.png",
+        "/champions-menu-sprites/0670-mega.png"
+      ]
+    },
+    {
+      "id": "hippowdon",
+      "name": "Hippowdon",
+      "dex": 450,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hippowdon.png",
+      "assets": [
+        "/champions-menu-sprites/0450.png"
+      ]
+    },
+    {
+      "id": "glaceon",
+      "name": "Glaceon",
+      "dex": 471,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/glaceon.png",
+      "assets": [
+        "/champions-menu-sprites/0471.png"
+      ]
+    },
+    {
+      "id": "noivern",
+      "name": "Noivern",
+      "dex": 715,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/noivern.png",
+      "assets": [
+        "/champions-menu-sprites/0715.png"
+      ]
+    },
+    {
+      "id": "alakazam",
+      "name": "Alakazam",
+      "dex": 65,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/alakazam.png",
+      "assets": [
+        "/champions-menu-sprites/0065-mega.png",
+        "/champions-menu-sprites/0065.png"
+      ]
+    },
+    {
+      "id": "quaquaval",
+      "name": "Quaquaval",
+      "dex": 914,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/quaquaval.png",
+      "assets": [
+        "/champions-menu-sprites/0914.png"
+      ]
+    },
+    {
+      "id": "serperior",
+      "name": "Serperior",
+      "dex": 497,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/serperior.png",
+      "assets": [
+        "/champions-menu-sprites/0497.png"
+      ]
+    },
+    {
+      "id": "infernape",
+      "name": "Infernape",
+      "dex": 392,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/infernape.png",
+      "assets": [
+        "/champions-menu-sprites/0392.png"
+      ]
+    },
+    {
+      "id": "spiritomb",
+      "name": "Spiritomb",
+      "dex": 442,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/spiritomb.png",
+      "assets": [
+        "/champions-menu-sprites/0442.png"
+      ]
+    },
+    {
+      "id": "skeledirge",
+      "name": "Skeledirge",
+      "dex": 911,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/skeledirge.png",
+      "assets": [
+        "/champions-menu-sprites/0911.png"
+      ]
+    },
+    {
+      "id": "garganacl",
+      "name": "Garganacl",
+      "dex": 934,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/garganacl.png",
+      "assets": [
+        "/champions-menu-sprites/0934.png"
+      ]
+    },
+    {
+      "id": "greninja",
+      "name": "Greninja",
+      "dex": 658,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/greninja.png",
+      "assets": [
+        "/champions-menu-sprites/0658-mega.png",
+        "/champions-menu-sprites/0658.png"
+      ]
+    },
+    {
+      "id": "aromatisse",
+      "name": "Aromatisse",
+      "dex": 683,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/aromatisse.png",
+      "assets": [
+        "/champions-menu-sprites/0683.png"
+      ]
+    },
+    {
+      "id": "runerigus",
+      "name": "Runerigus",
+      "dex": 867,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/runerigus.png",
+      "assets": [
+        "/champions-menu-sprites/0867.png"
+      ]
+    },
+    {
+      "id": "toxicroak",
+      "name": "Toxicroak",
+      "dex": 454,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/toxicroak.png",
+      "assets": [
+        "/champions-menu-sprites/0454.png"
+      ]
+    },
+    {
+      "id": "lycanroc",
+      "name": "Lycanroc",
+      "dex": 745,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/lycanroc.png",
+      "assets": [
+        "/champions-menu-sprites/0745.png"
+      ]
+    },
+    {
+      "id": "machamp",
+      "name": "Machamp",
+      "dex": 68,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/machamp.png",
+      "assets": [
+        "/champions-menu-sprites/0068.png"
+      ]
+    },
+    {
+      "id": "vaporeon",
+      "name": "Vaporeon",
+      "dex": 134,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/vaporeon.png",
+      "assets": [
+        "/champions-menu-sprites/0134.png"
+      ]
+    },
+    {
+      "id": "salazzle",
+      "name": "Salazzle",
+      "dex": 758,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/salazzle.png",
+      "assets": [
+        "/champions-menu-sprites/0758.png"
+      ]
+    },
+    {
+      "id": "slowbro-galar",
+      "name": "Slowbro-Galar",
+      "dex": 80,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/slowbro-galar.png",
+      "assets": [
+        "/champions-menu-sprites/0080-galar.png"
+      ]
+    },
+    {
+      "id": "clawitzer",
+      "name": "Clawitzer",
+      "dex": 693,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/clawitzer.png",
+      "assets": [
+        "/champions-menu-sprites/0693.png"
+      ]
+    },
+    {
+      "id": "aurorus",
+      "name": "Aurorus",
+      "dex": 699,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/aurorus.png",
+      "assets": [
+        "/champions-menu-sprites/0699.png"
+      ]
+    },
+    {
+      "id": "ninetales",
+      "name": "Ninetales",
+      "dex": 38,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/ninetales.png",
+      "assets": [
+        "/champions-menu-sprites/0038.png"
+      ]
+    },
+    {
+      "id": "medicham",
+      "name": "Medicham",
+      "dex": 308,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/medicham.png",
+      "assets": [
+        "/champions-menu-sprites/0308-mega.png",
+        "/champions-menu-sprites/0308.png"
+      ]
+    },
+    {
+      "id": "torterra",
+      "name": "Torterra",
+      "dex": 389,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/torterra.png",
+      "assets": [
+        "/champions-menu-sprites/0389.png"
+      ]
+    },
+    {
+      "id": "rampardos",
+      "name": "Rampardos",
+      "dex": 409,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rampardos.png",
+      "assets": [
+        "/champions-menu-sprites/0409.png"
+      ]
+    },
+    {
+      "id": "starmie",
+      "name": "Starmie",
+      "dex": 121,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/starmie.png",
+      "assets": [
+        "/champions-menu-sprites/0121-mega.png",
+        "/champions-menu-sprites/0121.png"
+      ]
+    },
+    {
+      "id": "mr-rime",
+      "name": "Mr. Rime",
+      "dex": 866,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/mrrime.png",
+      "assets": [
+        "/champions-menu-sprites/0866.png"
+      ]
+    },
+    {
+      "id": "sandaconda",
+      "name": "Sandaconda",
+      "dex": 844,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sandaconda.png",
+      "assets": [
+        "/champions-menu-sprites/0844.png"
+      ]
+    },
+    {
+      "id": "pangoro",
+      "name": "Pangoro",
+      "dex": 675,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pangoro.png",
+      "assets": [
+        "/champions-menu-sprites/0675.png"
+      ]
+    },
+    {
+      "id": "morpeko",
+      "name": "Morpeko",
+      "dex": 877,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/morpeko.png",
+      "assets": [
+        "/champions-menu-sprites/0877.png"
+      ]
+    },
+    {
+      "id": "flapple",
+      "name": "Flapple",
+      "dex": 841,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/flapple.png",
+      "assets": [
+        "/champions-menu-sprites/0841.png"
+      ]
+    },
+    {
+      "id": "hawlucha",
+      "name": "Hawlucha",
+      "dex": 701,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/hawlucha.png",
+      "assets": [
+        "/champions-menu-sprites/0701-mega.png",
+        "/champions-menu-sprites/0701.png"
+      ]
+    },
+    {
+      "id": "gourgeist-super",
+      "name": "Gourgeist-Super",
+      "dex": 711,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gourgeist-super.png",
+      "assets": []
+    },
+    {
+      "id": "pikachu",
+      "name": "Pikachu",
+      "dex": 25,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pikachu.png",
+      "assets": [
+        "/champions-menu-sprites/0025.png"
+      ]
+    },
+    {
+      "id": "passimian",
+      "name": "Passimian",
+      "dex": 766,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/passimian.png",
+      "assets": [
+        "/champions-menu-sprites/0766.png"
+      ]
+    },
+    {
+      "id": "slowbro",
+      "name": "Slowbro",
+      "dex": 80,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/slowbro.png",
+      "assets": [
+        "/champions-menu-sprites/0080-mega.png",
+        "/champions-menu-sprites/0080.png"
+      ]
+    },
+    {
+      "id": "scovillain",
+      "name": "Scovillain",
+      "dex": 952,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scovillain.png",
+      "assets": [
+        "/champions-menu-sprites/0952-mega.png",
+        "/champions-menu-sprites/0952.png"
+      ]
+    },
+    {
+      "id": "trevenant",
+      "name": "Trevenant",
+      "dex": 709,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/trevenant.png",
+      "assets": [
+        "/champions-menu-sprites/0709.png"
+      ]
+    },
+    {
+      "id": "beartic",
+      "name": "Beartic",
+      "dex": 614,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/beartic.png",
+      "assets": [
+        "/champions-menu-sprites/0614.png"
+      ]
+    },
+    {
+      "id": "tyrantrum",
+      "name": "Tyrantrum",
+      "dex": 697,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tyrantrum.png",
+      "assets": [
+        "/champions-menu-sprites/0697.png"
+      ]
+    },
+    {
+      "id": "leafeon",
+      "name": "Leafeon",
+      "dex": 470,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/leafeon.png",
+      "assets": [
+        "/champions-menu-sprites/0470.png"
+      ]
+    },
+    {
+      "id": "audino",
+      "name": "Audino",
+      "dex": 531,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/audino.png",
+      "assets": [
+        "/champions-menu-sprites/0531-mega.png",
+        "/champions-menu-sprites/0531.png"
+      ]
+    },
+    {
+      "id": "luxray",
+      "name": "Luxray",
+      "dex": 405,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/luxray.png",
+      "assets": [
+        "/champions-menu-sprites/0405.png"
+      ]
+    },
+    {
+      "id": "reuniclus",
+      "name": "Reuniclus",
+      "dex": 579,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/reuniclus.png",
+      "assets": [
+        "/champions-menu-sprites/0579.png"
+      ]
+    },
+    {
+      "id": "goodra",
+      "name": "Goodra",
+      "dex": 706,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/goodra.png",
+      "assets": [
+        "/champions-menu-sprites/0706.png"
+      ]
+    },
+    {
+      "id": "charizard",
+      "name": "Charizard",
+      "dex": 6,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/charizard.png",
+      "assets": [
+        "/champions-menu-sprites/0006.png"
+      ]
+    },
+    {
+      "id": "diggersby",
+      "name": "Diggersby",
+      "dex": 660,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/diggersby.png",
+      "assets": [
+        "/champions-menu-sprites/0660.png"
+      ]
+    },
+    {
+      "id": "florges",
+      "name": "Florges",
+      "dex": 671,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/florges.png",
+      "assets": [
+        "/champions-menu-sprites/0671.png"
+      ]
+    },
+    {
+      "id": "espeon",
+      "name": "Espeon",
+      "dex": 196,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/espeon.png",
+      "assets": [
+        "/champions-menu-sprites/0196.png"
+      ]
+    },
+    {
+      "id": "toucannon",
+      "name": "Toucannon",
+      "dex": 733,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/toucannon.png",
+      "assets": [
+        "/champions-menu-sprites/0733.png"
+      ]
+    },
+    {
+      "id": "sharpedo",
+      "name": "Sharpedo",
+      "dex": 319,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sharpedo.png",
+      "assets": [
+        "/champions-menu-sprites/0319-mega.png",
+        "/champions-menu-sprites/0319.png"
+      ]
+    },
+    {
+      "id": "typhlosion",
+      "name": "Typhlosion",
+      "dex": 157,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/typhlosion.png",
+      "assets": [
+        "/champions-menu-sprites/0157.png"
+      ]
+    },
+    {
+      "id": "chesnaught",
+      "name": "Chesnaught",
+      "dex": 652,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/chesnaught.png",
+      "assets": [
+        "/champions-menu-sprites/0652-mega.png",
+        "/champions-menu-sprites/0652.png"
+      ]
+    },
+    {
+      "id": "roserade",
+      "name": "Roserade",
+      "dex": 407,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/roserade.png",
+      "assets": [
+        "/champions-menu-sprites/0407.png"
+      ]
+    },
+    {
+      "id": "manectric",
+      "name": "Manectric",
+      "dex": 310,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/manectric.png",
+      "assets": [
+        "/champions-menu-sprites/0310-mega.png",
+        "/champions-menu-sprites/0310.png"
+      ]
+    },
+    {
+      "id": "raichu-alola",
+      "name": "Raichu-Alola",
+      "dex": 26,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/raichu-alola.png",
+      "assets": [
+        "/champions-menu-sprites/0026-alola.png"
+      ]
+    },
+    {
+      "id": "avalugg-hisui",
+      "name": "Avalugg-Hisui",
+      "dex": 713,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/avalugg-hisui.png",
+      "assets": [
+        "/champions-menu-sprites/0713-hisui.png"
+      ]
+    },
+    {
+      "id": "froslass",
+      "name": "Froslass",
+      "dex": 478,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/froslass.png",
+      "assets": [
+        "/champions-menu-sprites/0478-mega.png",
+        "/champions-menu-sprites/0478.png"
+      ]
+    },
+    {
+      "id": "camerupt",
+      "name": "Camerupt",
+      "dex": 323,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/camerupt.png",
+      "assets": [
+        "/champions-menu-sprites/0323-mega.png",
+        "/champions-menu-sprites/0323.png"
+      ]
+    },
+    {
+      "id": "emolga",
+      "name": "Emolga",
+      "dex": 587,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/emolga.png",
+      "assets": [
+        "/champions-menu-sprites/0587.png"
+      ]
+    },
+    {
+      "id": "decidueye",
+      "name": "Decidueye",
+      "dex": 724,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/decidueye.png",
+      "assets": [
+        "/champions-menu-sprites/0724.png"
+      ]
+    },
+    {
+      "id": "appletun",
+      "name": "Appletun",
+      "dex": 842,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/appletun.png",
+      "assets": [
+        "/champions-menu-sprites/0842.png"
+      ]
+    },
+    {
+      "id": "abomasnow",
+      "name": "Abomasnow",
+      "dex": 460,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/abomasnow.png",
+      "assets": [
+        "/champions-menu-sprites/0460-mega.png",
+        "/champions-menu-sprites/0460.png"
+      ]
+    },
+    {
+      "id": "polteageist",
+      "name": "Polteageist",
+      "dex": 855,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/polteageist.png",
+      "assets": [
+        "/champions-menu-sprites/0855.png"
+      ]
+    },
+    {
+      "id": "simipour",
+      "name": "Simipour",
+      "dex": 516,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/simipour.png",
+      "assets": [
+        "/champions-menu-sprites/0516.png"
+      ]
+    },
+    {
+      "id": "golurk",
+      "name": "Golurk",
+      "dex": 623,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/golurk.png",
+      "assets": [
+        "/champions-menu-sprites/0623-mega.png",
+        "/champions-menu-sprites/0623.png"
+      ]
+    },
+    {
+      "id": "zoroark",
+      "name": "Zoroark",
+      "dex": 571,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/zoroark.png",
+      "assets": [
+        "/champions-menu-sprites/0571.png"
+      ]
+    },
+    {
+      "id": "bastiodon",
+      "name": "Bastiodon",
+      "dex": 411,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/bastiodon.png",
+      "assets": [
+        "/champions-menu-sprites/0411.png"
+      ]
+    },
+    {
+      "id": "absol",
+      "name": "Absol",
+      "dex": 359,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/absol.png",
+      "assets": [
+        "/champions-menu-sprites/0359-mega.png",
+        "/champions-menu-sprites/0359.png"
+      ]
+    },
+    {
+      "id": "skarmory",
+      "name": "Skarmory",
+      "dex": 227,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/skarmory.png",
+      "assets": [
+        "/champions-menu-sprites/0227-mega.png",
+        "/champions-menu-sprites/0227.png"
+      ]
+    },
+    {
+      "id": "stunfisk",
+      "name": "Stunfisk",
+      "dex": 618,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/stunfisk.png",
+      "assets": [
+        "/champions-menu-sprites/0618.png"
+      ]
+    },
+    {
+      "id": "rotom-fan",
+      "name": "Rotom-Fan",
+      "dex": 479,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rotom-fan.png",
+      "assets": [
+        "/champions-menu-sprites/0479-fan.png"
+      ]
+    },
+    {
+      "id": "arbok",
+      "name": "Arbok",
+      "dex": 24,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/arbok.png",
+      "assets": [
+        "/champions-menu-sprites/0024.png"
+      ]
+    },
+    {
+      "id": "emboar",
+      "name": "Emboar",
+      "dex": 500,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/emboar.png",
+      "assets": [
+        "/champions-menu-sprites/0500-mega.png",
+        "/champions-menu-sprites/0500.png"
+      ]
+    },
+    {
+      "id": "heracross",
+      "name": "Heracross",
+      "dex": 214,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/heracross.png",
+      "assets": [
+        "/champions-menu-sprites/0214-mega.png",
+        "/champions-menu-sprites/0214.png"
+      ]
+    },
+    {
+      "id": "steelix",
+      "name": "Steelix",
+      "dex": 208,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/steelix.png",
+      "assets": [
+        "/champions-menu-sprites/0208-mega.png",
+        "/champions-menu-sprites/0208.png"
+      ]
+    },
+    {
+      "id": "crabominable",
+      "name": "Crabominable",
+      "dex": 740,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/crabominable.png",
+      "assets": [
+        "/champions-menu-sprites/0740-mega.png",
+        "/champions-menu-sprites/0740.png"
+      ]
+    },
+    {
+      "id": "ampharos",
+      "name": "Ampharos",
+      "dex": 181,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/ampharos.png",
+      "assets": [
+        "/champions-menu-sprites/0181-mega.png",
+        "/champions-menu-sprites/0181.png"
+      ]
+    },
+    {
+      "id": "lycanroc-midnight",
+      "name": "Lycanroc-Midnight",
+      "dex": 745,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/lycanroc-midnight.png",
+      "assets": [
+        "/champions-menu-sprites/0745-midnight.png"
+      ]
+    },
+    {
+      "id": "castform",
+      "name": "Castform",
+      "dex": 351,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/castform.png",
+      "assets": [
+        "/champions-menu-sprites/0351.png"
+      ]
+    },
+    {
+      "id": "flareon",
+      "name": "Flareon",
+      "dex": 136,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/flareon.png",
+      "assets": [
+        "/champions-menu-sprites/0136.png"
+      ]
+    },
+    {
+      "id": "avalugg",
+      "name": "Avalugg",
+      "dex": 713,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/avalugg.png",
+      "assets": [
+        "/champions-menu-sprites/0713.png"
+      ]
+    },
+    {
+      "id": "lopunny",
+      "name": "Lopunny",
+      "dex": 428,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/lopunny.png",
+      "assets": [
+        "/champions-menu-sprites/0428-mega.png",
+        "/champions-menu-sprites/0428.png"
+      ]
+    },
+    {
+      "id": "simisage",
+      "name": "Simisage",
+      "dex": 512,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/simisage.png",
+      "assets": [
+        "/champions-menu-sprites/0512.png"
+      ]
+    },
+    {
+      "id": "gourgeist",
+      "name": "Gourgeist",
+      "dex": 711,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gourgeist.png",
+      "assets": [
+        "/champions-menu-sprites/0711.png"
+      ]
+    },
+    {
+      "id": "slurpuff",
+      "name": "Slurpuff",
+      "dex": 685,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/slurpuff.png",
+      "assets": [
+        "/champions-menu-sprites/0685.png"
+      ]
+    },
+    {
+      "id": "dedenne",
+      "name": "Dedenne",
+      "dex": 702,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/dedenne.png",
+      "assets": [
+        "/champions-menu-sprites/0702.png"
+      ]
+    },
+    {
+      "id": "aggron",
+      "name": "Aggron",
+      "dex": 306,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/aggron.png",
+      "assets": [
+        "/champions-menu-sprites/0306-mega.png",
+        "/champions-menu-sprites/0306.png"
+      ]
+    },
+    {
+      "id": "glalie",
+      "name": "Glalie",
+      "dex": 362,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/glalie.png",
+      "assets": [
+        "/champions-menu-sprites/0362-mega.png",
+        "/champions-menu-sprites/0362.png"
+      ]
+    },
+    {
+      "id": "delphox",
+      "name": "Delphox",
+      "dex": 655,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/delphox.png",
+      "assets": [
+        "/champions-menu-sprites/0655-mega.png",
+        "/champions-menu-sprites/0655.png"
+      ]
+    },
+    {
+      "id": "furfrou",
+      "name": "Furfrou",
+      "dex": 676,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/furfrou.png",
+      "assets": [
+        "/champions-menu-sprites/0676.png"
+      ]
+    },
+    {
+      "id": "simisear",
+      "name": "Simisear",
+      "dex": 514,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/simisear.png",
+      "assets": [
+        "/champions-menu-sprites/0514.png"
+      ]
+    },
+    {
+      "id": "garbodor",
+      "name": "Garbodor",
+      "dex": 569,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/garbodor.png",
+      "assets": [
+        "/champions-menu-sprites/0569.png"
+      ]
+    },
+    {
+      "id": "rotom",
+      "name": "Rotom",
+      "dex": 479,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/rotom.png",
+      "assets": [
+        "/champions-menu-sprites/0479.png"
+      ]
+    },
+    {
+      "id": "stunfisk-galar",
+      "name": "Stunfisk-Galar",
+      "dex": 618,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/stunfisk-galar.png",
+      "assets": [
+        "/champions-menu-sprites/0618-galar.png"
+      ]
+    },
+    {
+      "id": "forretress",
+      "name": "Forretress",
+      "dex": 205,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/forretress.png",
+      "assets": [
+        "/champions-menu-sprites/0205.png"
+      ]
+    },
+    {
+      "id": "chimecho",
+      "name": "Chimecho",
+      "dex": 358,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/chimecho.png",
+      "assets": [
+        "/champions-menu-sprites/0358-mega.png",
+        "/champions-menu-sprites/0358.png"
+      ]
+    },
+    {
+      "id": "tauros",
+      "name": "Tauros",
+      "dex": 128,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tauros.png",
+      "assets": [
+        "/champions-menu-sprites/0128.png"
+      ]
+    },
+    {
+      "id": "gourgeist-small",
+      "name": "Gourgeist-Small",
+      "dex": 711,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gourgeist-small.png",
+      "assets": [
+        "/champions-menu-sprites/0711-small.png"
+      ]
+    },
+    {
+      "id": "houndoom",
+      "name": "Houndoom",
+      "dex": 229,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/houndoom.png",
+      "assets": [
+        "/champions-menu-sprites/0229-mega.png",
+        "/champions-menu-sprites/0229.png"
+      ]
+    },
+    {
+      "id": "victreebel",
+      "name": "Victreebel",
+      "dex": 71,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/victreebel.png",
+      "assets": [
+        "/champions-menu-sprites/0071-mega.png",
+        "/champions-menu-sprites/0071.png"
+      ]
+    },
+    {
+      "id": "watchog",
+      "name": "Watchog",
+      "dex": 505,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/watchog.png",
+      "assets": [
+        "/champions-menu-sprites/0505.png"
+      ]
+    },
+    {
+      "id": "tauros-paldea-combat",
+      "name": "Tauros-Paldea-Combat",
+      "dex": 128,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/tauros-paldeacombat.png",
+      "assets": [
+        "/champions-menu-sprites/0128-paldea-combat.png"
+      ]
+    },
+    {
+      "id": "annihilape",
+      "name": "Annihilape",
+      "dex": 979,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/annihilape.png",
+      "assets": [
+        "/champions-menu-sprites/0979.png"
+      ]
+    },
+    {
+      "id": "banette",
+      "name": "Banette",
+      "dex": 354,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/banette.png",
+      "assets": [
+        "/champions-menu-sprites/0354-mega.png",
+        "/champions-menu-sprites/0354.png"
+      ]
+    },
+    {
+      "id": "barbaracle",
+      "name": "Barbaracle",
+      "dex": 689,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/barbaracle.png",
+      "assets": [
+        "/champions-menu-sprites/0689-mega.png",
+        "/champions-menu-sprites/0689.png"
+      ]
+    },
+    {
+      "id": "beedrill",
+      "name": "Beedrill",
+      "dex": 15,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/beedrill.png",
+      "assets": [
+        "/champions-menu-sprites/0015-mega.png",
+        "/champions-menu-sprites/0015.png"
+      ]
+    },
+    {
+      "id": "blaziken",
+      "name": "Blaziken",
+      "dex": 257,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/blaziken.png",
+      "assets": [
+        "/champions-menu-sprites/0257-mega.png",
+        "/champions-menu-sprites/0257.png"
+      ]
+    },
+    {
+      "id": "dragalge",
+      "name": "Dragalge",
+      "dex": 691,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/dragalge.png",
+      "assets": [
+        "/champions-menu-sprites/0691-mega.png",
+        "/champions-menu-sprites/0691.png"
+      ]
+    },
+    {
+      "id": "eelektross",
+      "name": "Eelektross",
+      "dex": 604,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/eelektross.png",
+      "assets": [
+        "/champions-menu-sprites/0604-mega.png",
+        "/champions-menu-sprites/0604.png"
+      ]
+    },
+    {
+      "id": "falinks",
+      "name": "Falinks",
+      "dex": 870,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/falinks.png",
+      "assets": [
+        "/champions-menu-sprites/0870-mega.png",
+        "/champions-menu-sprites/0870.png"
+      ]
+    },
+    {
+      "id": "feraligatr",
+      "name": "Feraligatr",
+      "dex": 160,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/feraligatr.png",
+      "assets": [
+        "/champions-menu-sprites/0160-mega.png",
+        "/champions-menu-sprites/0160.png"
+      ]
+    },
+    {
+      "id": "gholdengo",
+      "name": "Gholdengo",
+      "dex": 1000,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gholdengo.png",
+      "assets": [
+        "/champions-menu-sprites/1000.png"
+      ]
+    },
+    {
+      "id": "gourgeist-large",
+      "name": "Gourgeist-Large",
+      "dex": 711,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/gourgeist-large.png",
+      "assets": [
+        "/champions-menu-sprites/0711-large.png"
+      ]
+    },
+    {
+      "id": "grimmsnarl",
+      "name": "Grimmsnarl",
+      "dex": 861,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/grimmsnarl.png",
+      "assets": [
+        "/champions-menu-sprites/0861.png"
+      ]
+    },
+    {
+      "id": "houndstone",
+      "name": "Houndstone",
+      "dex": 972,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/houndstone.png",
+      "assets": [
+        "/champions-menu-sprites/0972.png"
+      ]
+    },
+    {
+      "id": "malamar",
+      "name": "Malamar",
+      "dex": 687,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/malamar.png",
+      "assets": [
+        "/champions-menu-sprites/0687-mega.png",
+        "/champions-menu-sprites/0687.png"
+      ]
+    },
+    {
+      "id": "mawile",
+      "name": "Mawile",
+      "dex": 303,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/mawile.png",
+      "assets": [
+        "/champions-menu-sprites/0303-mega.png",
+        "/champions-menu-sprites/0303.png"
+      ]
+    },
+    {
+      "id": "meganium",
+      "name": "Meganium",
+      "dex": 154,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/meganium.png",
+      "assets": [
+        "/champions-menu-sprites/0154-mega.png",
+        "/champions-menu-sprites/0154.png"
+      ]
+    },
+    {
+      "id": "metagross",
+      "name": "Metagross",
+      "dex": 376,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/metagross.png",
+      "assets": [
+        "/champions-menu-sprites/0376-mega.png",
+        "/champions-menu-sprites/0376.png"
+      ]
+    },
+    {
+      "id": "musharna",
+      "name": "Musharna",
+      "dex": 518,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/musharna.png",
+      "assets": [
+        "/champions-menu-sprites/0518.png"
+      ]
+    },
+    {
+      "id": "overqwil",
+      "name": "Overqwil",
+      "dex": 904,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/overqwil.png",
+      "assets": [
+        "/champions-menu-sprites/0904.png"
+      ]
+    },
+    {
+      "id": "pidgeot",
+      "name": "Pidgeot",
+      "dex": 18,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pidgeot.png",
+      "assets": [
+        "/champions-menu-sprites/0018-mega.png",
+        "/champions-menu-sprites/0018.png"
+      ]
+    },
+    {
+      "id": "pinsir",
+      "name": "Pinsir",
+      "dex": 127,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pinsir.png",
+      "assets": [
+        "/champions-menu-sprites/0127-mega.png",
+        "/champions-menu-sprites/0127.png"
+      ]
+    },
+    {
+      "id": "pyroar",
+      "name": "Pyroar",
+      "dex": 668,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/pyroar.png",
+      "assets": [
+        "/champions-menu-sprites/0668-mega.png",
+        "/champions-menu-sprites/0668.png"
+      ]
+    },
+    {
+      "id": "qwilfish",
+      "name": "Qwilfish",
+      "dex": 211,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/qwilfish.png",
+      "assets": [
+        "/champions-menu-sprites/0211.png"
+      ]
+    },
+    {
+      "id": "samurott",
+      "name": "Samurott",
+      "dex": 503,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/samurott.png",
+      "assets": [
+        "/champions-menu-sprites/0503.png"
+      ]
+    },
+    {
+      "id": "sceptile",
+      "name": "Sceptile",
+      "dex": 254,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/sceptile.png",
+      "assets": [
+        "/champions-menu-sprites/0254-mega.png",
+        "/champions-menu-sprites/0254.png"
+      ]
+    },
+    {
+      "id": "scolipede",
+      "name": "Scolipede",
+      "dex": 545,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scolipede.png",
+      "assets": [
+        "/champions-menu-sprites/0545-mega.png",
+        "/champions-menu-sprites/0545.png"
+      ]
+    },
+    {
+      "id": "scrafty",
+      "name": "Scrafty",
+      "dex": 560,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/scrafty.png",
+      "assets": [
+        "/champions-menu-sprites/0560-mega.png",
+        "/champions-menu-sprites/0560.png"
+      ]
+    },
+    {
+      "id": "staraptor",
+      "name": "Staraptor",
+      "dex": 398,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/staraptor.png",
+      "assets": [
+        "/champions-menu-sprites/0398-mega.png",
+        "/champions-menu-sprites/0398.png"
+      ]
+    },
+    {
+      "id": "swampert",
+      "name": "Swampert",
+      "dex": 260,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/swampert.png",
+      "assets": [
+        "/champions-menu-sprites/0260-mega.png",
+        "/champions-menu-sprites/0260.png"
+      ]
+    },
+    {
+      "id": "vileplume",
+      "name": "Vileplume",
+      "dex": 45,
+      "sprite": "https://play.pokemonshowdown.com/sprites/gen5/vileplume.png",
+      "assets": [
+        "/champions-menu-sprites/0045.png"
+      ]
+    }
+  ]
+}

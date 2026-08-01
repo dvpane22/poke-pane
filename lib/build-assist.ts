@@ -152,8 +152,8 @@ export function buildAssistContext(
       item: build.item || "None",
       ability: build.ability || "None",
       nature: build.nature || "Hardy",
-      moves: build.moves.filter(Boolean),
-      evs: build.evs,
+      moves: (build.moves ?? []).filter(Boolean),
+      evs: build.evs ?? { HP: 0, Atk: 0, Def: 0, SpA: 0, SpD: 0, Spe: 0 },
       selected: build.id === selectedId,
     };
   });
@@ -1823,14 +1823,16 @@ export function mergeBuildAssistActions(
     updateBySpecies.delete(species);
   }
 
-  return [...enforceItemClauseOnActions(
-    [...others, ...updateBySpecies.values(), ...adds].map((action) => (
-      action.type === "add_pokemon"
-        ? attachReplacementTarget(action, team, conversationText)
-        : action
-    )),
-    team,
-  )];
+  const finalizedAdds = adds.map((action) => attachReplacementTarget(action, team, conversationText));
+  const finalReplacedSpecies = new Set(
+    finalizedAdds
+      .map((action) => action.replaces?.trim().toLowerCase())
+      .filter((species): species is string => Boolean(species)),
+  );
+  const finalizedActions = [...others, ...updateBySpecies.values(), ...finalizedAdds]
+    .filter((action) => action.type !== "update_set" || !finalReplacedSpecies.has(action.pokemon.toLowerCase()));
+
+  return [...enforceItemClauseOnActions(finalizedActions, team)];
 }
 
 function spreadTotal(evs: Partial<Record<StatKey, number>>) {

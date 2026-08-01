@@ -397,8 +397,9 @@ export function validateTeam(team: PokemonBuild[]): ValidationIssue[] {
     if (pokemon.ability && !legalAbilitiesForBuild(data, pokemon).includes(pokemon.ability)) {
       issues.push({ message: `${pokemon.ability} is not available to ${pokemon.species}.`, pokemonId: pokemon.id });
     }
-    if (Object.values(pokemon.evs).some((value) => value > CHAMPIONS_STAT_POINT_MAX)) issues.push({ message: `${pokemon.species} has more than 32 Stat Points in one stat.`, pokemonId: pokemon.id });
-    if (Object.values(pokemon.evs).reduce((sum, value) => sum + value, 0) > CHAMPIONS_STAT_POINT_TOTAL) issues.push({ message: `${pokemon.species} has more than 66 total Stat Points assigned.`, pokemonId: pokemon.id });
+    const evs = pokemon.evs ?? {};
+    if (Object.values(evs).some((value) => value > CHAMPIONS_STAT_POINT_MAX)) issues.push({ message: `${pokemon.species} has more than 32 Stat Points in one stat.`, pokemonId: pokemon.id });
+    if (Object.values(evs).reduce((sum, value) => sum + value, 0) > CHAMPIONS_STAT_POINT_TOTAL) issues.push({ message: `${pokemon.species} has more than 66 total Stat Points assigned.`, pokemonId: pokemon.id });
   });
   return issues;
 }

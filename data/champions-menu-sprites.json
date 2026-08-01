@@ -1,0 +1,2439 @@
+{
+  "version": 1,
+  "source": "Bulbagarden Archives / Category:Champions menu sprites",
+  "generatedAt": "2026-07-19T20:18:39.744Z",
+  "references": [
+    {
+      "speciesId": "venusaur",
+      "name": "Venusaur",
+      "dex": 3,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0003-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/dc/Menu_CP_0003-Mega.png"
+    },
+    {
+      "speciesId": "venusaur",
+      "name": "Venusaur",
+      "dex": 3,
+      "form": null,
+      "asset": "/champions-menu-sprites/0003.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/dd/Menu_CP_0003.png"
+    },
+    {
+      "speciesId": "charizard",
+      "name": "Charizard",
+      "dex": 6,
+      "form": null,
+      "asset": "/champions-menu-sprites/0006.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f7/Menu_CP_0006.png"
+    },
+    {
+      "speciesId": "blastoise",
+      "name": "Blastoise",
+      "dex": 9,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0009-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/78/Menu_CP_0009-Mega.png"
+    },
+    {
+      "speciesId": "blastoise",
+      "name": "Blastoise",
+      "dex": 9,
+      "form": null,
+      "asset": "/champions-menu-sprites/0009.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/40/Menu_CP_0009.png"
+    },
+    {
+      "speciesId": "beedrill",
+      "name": "Beedrill",
+      "dex": 15,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0015-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0f/Menu_CP_0015-Mega.png"
+    },
+    {
+      "speciesId": "beedrill",
+      "name": "Beedrill",
+      "dex": 15,
+      "form": null,
+      "asset": "/champions-menu-sprites/0015.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/76/Menu_CP_0015.png"
+    },
+    {
+      "speciesId": "pidgeot",
+      "name": "Pidgeot",
+      "dex": 18,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0018-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f8/Menu_CP_0018-Mega.png"
+    },
+    {
+      "speciesId": "pidgeot",
+      "name": "Pidgeot",
+      "dex": 18,
+      "form": null,
+      "asset": "/champions-menu-sprites/0018.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7b/Menu_CP_0018.png"
+    },
+    {
+      "speciesId": "arbok",
+      "name": "Arbok",
+      "dex": 24,
+      "form": null,
+      "asset": "/champions-menu-sprites/0024.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/32/Menu_CP_0024.png"
+    },
+    {
+      "speciesId": "pikachu",
+      "name": "Pikachu",
+      "dex": 25,
+      "form": null,
+      "asset": "/champions-menu-sprites/0025.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e9/Menu_CP_0025.png"
+    },
+    {
+      "speciesId": "raichu-alola",
+      "name": "Raichu-Alola",
+      "dex": 26,
+      "form": "Alola",
+      "asset": "/champions-menu-sprites/0026-alola.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/ca/Menu_CP_0026-Alola.png"
+    },
+    {
+      "speciesId": "raichu",
+      "name": "Raichu",
+      "dex": 26,
+      "form": null,
+      "asset": "/champions-menu-sprites/0026.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6e/Menu_CP_0026.png"
+    },
+    {
+      "speciesId": "clefable",
+      "name": "Clefable",
+      "dex": 36,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0036-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/9a/Menu_CP_0036-Mega.png"
+    },
+    {
+      "speciesId": "clefable",
+      "name": "Clefable",
+      "dex": 36,
+      "form": null,
+      "asset": "/champions-menu-sprites/0036.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/29/Menu_CP_0036.png"
+    },
+    {
+      "speciesId": "ninetales-alola",
+      "name": "Ninetales-Alola",
+      "dex": 38,
+      "form": "Alola",
+      "asset": "/champions-menu-sprites/0038-alola.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7f/Menu_CP_0038-Alola.png"
+    },
+    {
+      "speciesId": "ninetales",
+      "name": "Ninetales",
+      "dex": 38,
+      "form": null,
+      "asset": "/champions-menu-sprites/0038.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/01/Menu_CP_0038.png"
+    },
+    {
+      "speciesId": "vileplume",
+      "name": "Vileplume",
+      "dex": 45,
+      "form": null,
+      "asset": "/champions-menu-sprites/0045.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4c/Menu_CP_0045.png"
+    },
+    {
+      "speciesId": "arcanine-hisui",
+      "name": "Arcanine-Hisui",
+      "dex": 59,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0059-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/bd/Menu_CP_0059-Hisui.png"
+    },
+    {
+      "speciesId": "arcanine",
+      "name": "Arcanine",
+      "dex": 59,
+      "form": null,
+      "asset": "/champions-menu-sprites/0059.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b6/Menu_CP_0059.png"
+    },
+    {
+      "speciesId": "alakazam",
+      "name": "Alakazam",
+      "dex": 65,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0065-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/21/Menu_CP_0065-Mega.png"
+    },
+    {
+      "speciesId": "alakazam",
+      "name": "Alakazam",
+      "dex": 65,
+      "form": null,
+      "asset": "/champions-menu-sprites/0065.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/18/Menu_CP_0065.png"
+    },
+    {
+      "speciesId": "machamp",
+      "name": "Machamp",
+      "dex": 68,
+      "form": null,
+      "asset": "/champions-menu-sprites/0068.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f3/Menu_CP_0068.png"
+    },
+    {
+      "speciesId": "victreebel",
+      "name": "Victreebel",
+      "dex": 71,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0071-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a7/Menu_CP_0071-Mega.png"
+    },
+    {
+      "speciesId": "victreebel",
+      "name": "Victreebel",
+      "dex": 71,
+      "form": null,
+      "asset": "/champions-menu-sprites/0071.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/22/Menu_CP_0071.png"
+    },
+    {
+      "speciesId": "slowbro-galar",
+      "name": "Slowbro-Galar",
+      "dex": 80,
+      "form": "Galar",
+      "asset": "/champions-menu-sprites/0080-galar.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/8a/Menu_CP_0080-Galar.png"
+    },
+    {
+      "speciesId": "slowbro",
+      "name": "Slowbro",
+      "dex": 80,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0080-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a4/Menu_CP_0080-Mega.png"
+    },
+    {
+      "speciesId": "slowbro",
+      "name": "Slowbro",
+      "dex": 80,
+      "form": null,
+      "asset": "/champions-menu-sprites/0080.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/5f/Menu_CP_0080.png"
+    },
+    {
+      "speciesId": "gengar",
+      "name": "Gengar",
+      "dex": 94,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0094-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1f/Menu_CP_0094-Mega.png"
+    },
+    {
+      "speciesId": "gengar",
+      "name": "Gengar",
+      "dex": 94,
+      "form": null,
+      "asset": "/champions-menu-sprites/0094.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/cf/Menu_CP_0094.png"
+    },
+    {
+      "speciesId": "kangaskhan",
+      "name": "Kangaskhan",
+      "dex": 115,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0115-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6d/Menu_CP_0115-Mega.png"
+    },
+    {
+      "speciesId": "kangaskhan",
+      "name": "Kangaskhan",
+      "dex": 115,
+      "form": null,
+      "asset": "/champions-menu-sprites/0115.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/84/Menu_CP_0115.png"
+    },
+    {
+      "speciesId": "starmie",
+      "name": "Starmie",
+      "dex": 121,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0121-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/26/Menu_CP_0121-Mega.png"
+    },
+    {
+      "speciesId": "starmie",
+      "name": "Starmie",
+      "dex": 121,
+      "form": null,
+      "asset": "/champions-menu-sprites/0121.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/34/Menu_CP_0121.png"
+    },
+    {
+      "speciesId": "pinsir",
+      "name": "Pinsir",
+      "dex": 127,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0127-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/df/Menu_CP_0127-Mega.png"
+    },
+    {
+      "speciesId": "pinsir",
+      "name": "Pinsir",
+      "dex": 127,
+      "form": null,
+      "asset": "/champions-menu-sprites/0127.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2b/Menu_CP_0127.png"
+    },
+    {
+      "speciesId": "tauros-paldea-aqua",
+      "name": "Tauros-Paldea-Aqua",
+      "dex": 128,
+      "form": "Paldea Aqua",
+      "asset": "/champions-menu-sprites/0128-paldea-aqua.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/72/Menu_CP_0128-Paldea_Aqua.png"
+    },
+    {
+      "speciesId": "tauros-paldea-blaze",
+      "name": "Tauros-Paldea-Blaze",
+      "dex": 128,
+      "form": "Paldea Blaze",
+      "asset": "/champions-menu-sprites/0128-paldea-blaze.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b4/Menu_CP_0128-Paldea_Blaze.png"
+    },
+    {
+      "speciesId": "tauros-paldea-combat",
+      "name": "Tauros-Paldea-Combat",
+      "dex": 128,
+      "form": "Paldea Combat",
+      "asset": "/champions-menu-sprites/0128-paldea-combat.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/09/Menu_CP_0128-Paldea_Combat.png"
+    },
+    {
+      "speciesId": "tauros",
+      "name": "Tauros",
+      "dex": 128,
+      "form": null,
+      "asset": "/champions-menu-sprites/0128.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/98/Menu_CP_0128.png"
+    },
+    {
+      "speciesId": "gyarados",
+      "name": "Gyarados",
+      "dex": 130,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0130-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/36/Menu_CP_0130-Mega.png"
+    },
+    {
+      "speciesId": "gyarados",
+      "name": "Gyarados",
+      "dex": 130,
+      "form": null,
+      "asset": "/champions-menu-sprites/0130.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/97/Menu_CP_0130.png"
+    },
+    {
+      "speciesId": "ditto",
+      "name": "Ditto",
+      "dex": 132,
+      "form": null,
+      "asset": "/champions-menu-sprites/0132.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ea/Menu_CP_0132.png"
+    },
+    {
+      "speciesId": "vaporeon",
+      "name": "Vaporeon",
+      "dex": 134,
+      "form": null,
+      "asset": "/champions-menu-sprites/0134.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c6/Menu_CP_0134.png"
+    },
+    {
+      "speciesId": "jolteon",
+      "name": "Jolteon",
+      "dex": 135,
+      "form": null,
+      "asset": "/champions-menu-sprites/0135.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ec/Menu_CP_0135.png"
+    },
+    {
+      "speciesId": "flareon",
+      "name": "Flareon",
+      "dex": 136,
+      "form": null,
+      "asset": "/champions-menu-sprites/0136.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c2/Menu_CP_0136.png"
+    },
+    {
+      "speciesId": "aerodactyl",
+      "name": "Aerodactyl",
+      "dex": 142,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0142-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/9f/Menu_CP_0142-Mega.png"
+    },
+    {
+      "speciesId": "aerodactyl",
+      "name": "Aerodactyl",
+      "dex": 142,
+      "form": null,
+      "asset": "/champions-menu-sprites/0142.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/05/Menu_CP_0142.png"
+    },
+    {
+      "speciesId": "snorlax",
+      "name": "Snorlax",
+      "dex": 143,
+      "form": null,
+      "asset": "/champions-menu-sprites/0143.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/23/Menu_CP_0143.png"
+    },
+    {
+      "speciesId": "dragonite",
+      "name": "Dragonite",
+      "dex": 149,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0149-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/79/Menu_CP_0149-Mega.png"
+    },
+    {
+      "speciesId": "dragonite",
+      "name": "Dragonite",
+      "dex": 149,
+      "form": null,
+      "asset": "/champions-menu-sprites/0149.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c6/Menu_CP_0149.png"
+    },
+    {
+      "speciesId": "meganium",
+      "name": "Meganium",
+      "dex": 154,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0154-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/5a/Menu_CP_0154-Mega.png"
+    },
+    {
+      "speciesId": "meganium",
+      "name": "Meganium",
+      "dex": 154,
+      "form": null,
+      "asset": "/champions-menu-sprites/0154.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/50/Menu_CP_0154.png"
+    },
+    {
+      "speciesId": "typhlosion-hisui",
+      "name": "Typhlosion-Hisui",
+      "dex": 157,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0157-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e3/Menu_CP_0157-Hisui.png"
+    },
+    {
+      "speciesId": "typhlosion",
+      "name": "Typhlosion",
+      "dex": 157,
+      "form": null,
+      "asset": "/champions-menu-sprites/0157.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6f/Menu_CP_0157.png"
+    },
+    {
+      "speciesId": "feraligatr",
+      "name": "Feraligatr",
+      "dex": 160,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0160-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2b/Menu_CP_0160-Mega.png"
+    },
+    {
+      "speciesId": "feraligatr",
+      "name": "Feraligatr",
+      "dex": 160,
+      "form": null,
+      "asset": "/champions-menu-sprites/0160.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/ad/Menu_CP_0160.png"
+    },
+    {
+      "speciesId": "ariados",
+      "name": "Ariados",
+      "dex": 168,
+      "form": null,
+      "asset": "/champions-menu-sprites/0168.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/09/Menu_CP_0168.png"
+    },
+    {
+      "speciesId": "ampharos",
+      "name": "Ampharos",
+      "dex": 181,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0181-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/ba/Menu_CP_0181-Mega.png"
+    },
+    {
+      "speciesId": "ampharos",
+      "name": "Ampharos",
+      "dex": 181,
+      "form": null,
+      "asset": "/champions-menu-sprites/0181.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/70/Menu_CP_0181.png"
+    },
+    {
+      "speciesId": "azumarill",
+      "name": "Azumarill",
+      "dex": 184,
+      "form": null,
+      "asset": "/champions-menu-sprites/0184.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c8/Menu_CP_0184.png"
+    },
+    {
+      "speciesId": "politoed",
+      "name": "Politoed",
+      "dex": 186,
+      "form": null,
+      "asset": "/champions-menu-sprites/0186.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/82/Menu_CP_0186.png"
+    },
+    {
+      "speciesId": "espeon",
+      "name": "Espeon",
+      "dex": 196,
+      "form": null,
+      "asset": "/champions-menu-sprites/0196.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/d1/Menu_CP_0196.png"
+    },
+    {
+      "speciesId": "umbreon",
+      "name": "Umbreon",
+      "dex": 197,
+      "form": null,
+      "asset": "/champions-menu-sprites/0197.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/95/Menu_CP_0197.png"
+    },
+    {
+      "speciesId": "slowking-galar",
+      "name": "Slowking-Galar",
+      "dex": 199,
+      "form": "Galar",
+      "asset": "/champions-menu-sprites/0199-galar.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/5a/Menu_CP_0199-Galar.png"
+    },
+    {
+      "speciesId": "slowking",
+      "name": "Slowking",
+      "dex": 199,
+      "form": null,
+      "asset": "/champions-menu-sprites/0199.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f0/Menu_CP_0199.png"
+    },
+    {
+      "speciesId": "forretress",
+      "name": "Forretress",
+      "dex": 205,
+      "form": null,
+      "asset": "/champions-menu-sprites/0205.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a3/Menu_CP_0205.png"
+    },
+    {
+      "speciesId": "steelix",
+      "name": "Steelix",
+      "dex": 208,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0208-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/25/Menu_CP_0208-Mega.png"
+    },
+    {
+      "speciesId": "steelix",
+      "name": "Steelix",
+      "dex": 208,
+      "form": null,
+      "asset": "/champions-menu-sprites/0208.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/27/Menu_CP_0208.png"
+    },
+    {
+      "speciesId": "qwilfish",
+      "name": "Qwilfish",
+      "dex": 211,
+      "form": null,
+      "asset": "/champions-menu-sprites/0211.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/69/Menu_CP_0211.png"
+    },
+    {
+      "speciesId": "scizor",
+      "name": "Scizor",
+      "dex": 212,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0212-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/27/Menu_CP_0212-Mega.png"
+    },
+    {
+      "speciesId": "scizor",
+      "name": "Scizor",
+      "dex": 212,
+      "form": null,
+      "asset": "/champions-menu-sprites/0212.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/34/Menu_CP_0212.png"
+    },
+    {
+      "speciesId": "heracross",
+      "name": "Heracross",
+      "dex": 214,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0214-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c6/Menu_CP_0214-Mega.png"
+    },
+    {
+      "speciesId": "heracross",
+      "name": "Heracross",
+      "dex": 214,
+      "form": null,
+      "asset": "/champions-menu-sprites/0214.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2c/Menu_CP_0214.png"
+    },
+    {
+      "speciesId": "skarmory",
+      "name": "Skarmory",
+      "dex": 227,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0227-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/33/Menu_CP_0227-Mega.png"
+    },
+    {
+      "speciesId": "skarmory",
+      "name": "Skarmory",
+      "dex": 227,
+      "form": null,
+      "asset": "/champions-menu-sprites/0227.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/85/Menu_CP_0227.png"
+    },
+    {
+      "speciesId": "houndoom",
+      "name": "Houndoom",
+      "dex": 229,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0229-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/ba/Menu_CP_0229-Mega.png"
+    },
+    {
+      "speciesId": "houndoom",
+      "name": "Houndoom",
+      "dex": 229,
+      "form": null,
+      "asset": "/champions-menu-sprites/0229.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f6/Menu_CP_0229.png"
+    },
+    {
+      "speciesId": "tyranitar",
+      "name": "Tyranitar",
+      "dex": 248,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0248-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6b/Menu_CP_0248-Mega.png"
+    },
+    {
+      "speciesId": "tyranitar",
+      "name": "Tyranitar",
+      "dex": 248,
+      "form": null,
+      "asset": "/champions-menu-sprites/0248.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0c/Menu_CP_0248.png"
+    },
+    {
+      "speciesId": "sceptile",
+      "name": "Sceptile",
+      "dex": 254,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0254-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ea/Menu_CP_0254-Mega.png"
+    },
+    {
+      "speciesId": "sceptile",
+      "name": "Sceptile",
+      "dex": 254,
+      "form": null,
+      "asset": "/champions-menu-sprites/0254.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f7/Menu_CP_0254.png"
+    },
+    {
+      "speciesId": "blaziken",
+      "name": "Blaziken",
+      "dex": 257,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0257-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/ff/Menu_CP_0257-Mega.png"
+    },
+    {
+      "speciesId": "blaziken",
+      "name": "Blaziken",
+      "dex": 257,
+      "form": null,
+      "asset": "/champions-menu-sprites/0257.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a1/Menu_CP_0257.png"
+    },
+    {
+      "speciesId": "swampert",
+      "name": "Swampert",
+      "dex": 260,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0260-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0c/Menu_CP_0260-Mega.png"
+    },
+    {
+      "speciesId": "swampert",
+      "name": "Swampert",
+      "dex": 260,
+      "form": null,
+      "asset": "/champions-menu-sprites/0260.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/80/Menu_CP_0260.png"
+    },
+    {
+      "speciesId": "pelipper",
+      "name": "Pelipper",
+      "dex": 279,
+      "form": null,
+      "asset": "/champions-menu-sprites/0279.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c5/Menu_CP_0279.png"
+    },
+    {
+      "speciesId": "gardevoir",
+      "name": "Gardevoir",
+      "dex": 282,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0282-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4e/Menu_CP_0282-Mega.png"
+    },
+    {
+      "speciesId": "gardevoir",
+      "name": "Gardevoir",
+      "dex": 282,
+      "form": null,
+      "asset": "/champions-menu-sprites/0282.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4c/Menu_CP_0282.png"
+    },
+    {
+      "speciesId": "sableye",
+      "name": "Sableye",
+      "dex": 302,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0302-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/18/Menu_CP_0302-Mega.png"
+    },
+    {
+      "speciesId": "sableye",
+      "name": "Sableye",
+      "dex": 302,
+      "form": null,
+      "asset": "/champions-menu-sprites/0302.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/3d/Menu_CP_0302.png"
+    },
+    {
+      "speciesId": "mawile",
+      "name": "Mawile",
+      "dex": 303,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0303-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/8d/Menu_CP_0303-Mega.png"
+    },
+    {
+      "speciesId": "mawile",
+      "name": "Mawile",
+      "dex": 303,
+      "form": null,
+      "asset": "/champions-menu-sprites/0303.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7b/Menu_CP_0303.png"
+    },
+    {
+      "speciesId": "aggron",
+      "name": "Aggron",
+      "dex": 306,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0306-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/ff/Menu_CP_0306-Mega.png"
+    },
+    {
+      "speciesId": "aggron",
+      "name": "Aggron",
+      "dex": 306,
+      "form": null,
+      "asset": "/champions-menu-sprites/0306.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/37/Menu_CP_0306.png"
+    },
+    {
+      "speciesId": "medicham",
+      "name": "Medicham",
+      "dex": 308,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0308-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/8d/Menu_CP_0308-Mega.png"
+    },
+    {
+      "speciesId": "medicham",
+      "name": "Medicham",
+      "dex": 308,
+      "form": null,
+      "asset": "/champions-menu-sprites/0308.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e8/Menu_CP_0308.png"
+    },
+    {
+      "speciesId": "manectric",
+      "name": "Manectric",
+      "dex": 310,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0310-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/3b/Menu_CP_0310-Mega.png"
+    },
+    {
+      "speciesId": "manectric",
+      "name": "Manectric",
+      "dex": 310,
+      "form": null,
+      "asset": "/champions-menu-sprites/0310.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/fb/Menu_CP_0310.png"
+    },
+    {
+      "speciesId": "sharpedo",
+      "name": "Sharpedo",
+      "dex": 319,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0319-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a9/Menu_CP_0319-Mega.png"
+    },
+    {
+      "speciesId": "sharpedo",
+      "name": "Sharpedo",
+      "dex": 319,
+      "form": null,
+      "asset": "/champions-menu-sprites/0319.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7e/Menu_CP_0319.png"
+    },
+    {
+      "speciesId": "camerupt",
+      "name": "Camerupt",
+      "dex": 323,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0323-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/94/Menu_CP_0323-Mega.png"
+    },
+    {
+      "speciesId": "camerupt",
+      "name": "Camerupt",
+      "dex": 323,
+      "form": null,
+      "asset": "/champions-menu-sprites/0323.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b6/Menu_CP_0323.png"
+    },
+    {
+      "speciesId": "torkoal",
+      "name": "Torkoal",
+      "dex": 324,
+      "form": null,
+      "asset": "/champions-menu-sprites/0324.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/00/Menu_CP_0324.png"
+    },
+    {
+      "speciesId": "altaria",
+      "name": "Altaria",
+      "dex": 334,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0334-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1a/Menu_CP_0334-Mega.png"
+    },
+    {
+      "speciesId": "altaria",
+      "name": "Altaria",
+      "dex": 334,
+      "form": null,
+      "asset": "/champions-menu-sprites/0334.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/af/Menu_CP_0334.png"
+    },
+    {
+      "speciesId": "milotic",
+      "name": "Milotic",
+      "dex": 350,
+      "form": null,
+      "asset": "/champions-menu-sprites/0350.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/28/Menu_CP_0350.png"
+    },
+    {
+      "speciesId": "castform",
+      "name": "Castform",
+      "dex": 351,
+      "form": null,
+      "asset": "/champions-menu-sprites/0351.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6a/Menu_CP_0351.png"
+    },
+    {
+      "speciesId": "banette",
+      "name": "Banette",
+      "dex": 354,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0354-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/99/Menu_CP_0354-Mega.png"
+    },
+    {
+      "speciesId": "banette",
+      "name": "Banette",
+      "dex": 354,
+      "form": null,
+      "asset": "/champions-menu-sprites/0354.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/26/Menu_CP_0354.png"
+    },
+    {
+      "speciesId": "chimecho",
+      "name": "Chimecho",
+      "dex": 358,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0358-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/9e/Menu_CP_0358-Mega.png"
+    },
+    {
+      "speciesId": "chimecho",
+      "name": "Chimecho",
+      "dex": 358,
+      "form": null,
+      "asset": "/champions-menu-sprites/0358.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1e/Menu_CP_0358.png"
+    },
+    {
+      "speciesId": "absol",
+      "name": "Absol",
+      "dex": 359,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0359-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/d5/Menu_CP_0359-Mega.png"
+    },
+    {
+      "speciesId": "absol",
+      "name": "Absol",
+      "dex": 359,
+      "form": null,
+      "asset": "/champions-menu-sprites/0359.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/47/Menu_CP_0359.png"
+    },
+    {
+      "speciesId": "glalie",
+      "name": "Glalie",
+      "dex": 362,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0362-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/fb/Menu_CP_0362-Mega.png"
+    },
+    {
+      "speciesId": "glalie",
+      "name": "Glalie",
+      "dex": 362,
+      "form": null,
+      "asset": "/champions-menu-sprites/0362.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/cc/Menu_CP_0362.png"
+    },
+    {
+      "speciesId": "metagross",
+      "name": "Metagross",
+      "dex": 376,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0376-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/50/Menu_CP_0376-Mega.png"
+    },
+    {
+      "speciesId": "metagross",
+      "name": "Metagross",
+      "dex": 376,
+      "form": null,
+      "asset": "/champions-menu-sprites/0376.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0e/Menu_CP_0376.png"
+    },
+    {
+      "speciesId": "torterra",
+      "name": "Torterra",
+      "dex": 389,
+      "form": null,
+      "asset": "/champions-menu-sprites/0389.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a6/Menu_CP_0389.png"
+    },
+    {
+      "speciesId": "infernape",
+      "name": "Infernape",
+      "dex": 392,
+      "form": null,
+      "asset": "/champions-menu-sprites/0392.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/ac/Menu_CP_0392.png"
+    },
+    {
+      "speciesId": "empoleon",
+      "name": "Empoleon",
+      "dex": 395,
+      "form": null,
+      "asset": "/champions-menu-sprites/0395.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/42/Menu_CP_0395.png"
+    },
+    {
+      "speciesId": "staraptor",
+      "name": "Staraptor",
+      "dex": 398,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0398-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b0/Menu_CP_0398-Mega.png"
+    },
+    {
+      "speciesId": "staraptor",
+      "name": "Staraptor",
+      "dex": 398,
+      "form": null,
+      "asset": "/champions-menu-sprites/0398.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f2/Menu_CP_0398.png"
+    },
+    {
+      "speciesId": "luxray",
+      "name": "Luxray",
+      "dex": 405,
+      "form": null,
+      "asset": "/champions-menu-sprites/0405.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e2/Menu_CP_0405.png"
+    },
+    {
+      "speciesId": "roserade",
+      "name": "Roserade",
+      "dex": 407,
+      "form": null,
+      "asset": "/champions-menu-sprites/0407.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6f/Menu_CP_0407.png"
+    },
+    {
+      "speciesId": "rampardos",
+      "name": "Rampardos",
+      "dex": 409,
+      "form": null,
+      "asset": "/champions-menu-sprites/0409.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/78/Menu_CP_0409.png"
+    },
+    {
+      "speciesId": "bastiodon",
+      "name": "Bastiodon",
+      "dex": 411,
+      "form": null,
+      "asset": "/champions-menu-sprites/0411.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7c/Menu_CP_0411.png"
+    },
+    {
+      "speciesId": "lopunny",
+      "name": "Lopunny",
+      "dex": 428,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0428-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/24/Menu_CP_0428-Mega.png"
+    },
+    {
+      "speciesId": "lopunny",
+      "name": "Lopunny",
+      "dex": 428,
+      "form": null,
+      "asset": "/champions-menu-sprites/0428.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/3c/Menu_CP_0428.png"
+    },
+    {
+      "speciesId": "spiritomb",
+      "name": "Spiritomb",
+      "dex": 442,
+      "form": null,
+      "asset": "/champions-menu-sprites/0442.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/63/Menu_CP_0442.png"
+    },
+    {
+      "speciesId": "garchomp",
+      "name": "Garchomp",
+      "dex": 445,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0445-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/14/Menu_CP_0445-Mega.png"
+    },
+    {
+      "speciesId": "garchomp",
+      "name": "Garchomp",
+      "dex": 445,
+      "form": null,
+      "asset": "/champions-menu-sprites/0445.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/66/Menu_CP_0445.png"
+    },
+    {
+      "speciesId": "lucario",
+      "name": "Lucario",
+      "dex": 448,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0448-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/36/Menu_CP_0448-Mega.png"
+    },
+    {
+      "speciesId": "lucario",
+      "name": "Lucario",
+      "dex": 448,
+      "form": null,
+      "asset": "/champions-menu-sprites/0448.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/57/Menu_CP_0448.png"
+    },
+    {
+      "speciesId": "hippowdon",
+      "name": "Hippowdon",
+      "dex": 450,
+      "form": null,
+      "asset": "/champions-menu-sprites/0450.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/54/Menu_CP_0450.png"
+    },
+    {
+      "speciesId": "toxicroak",
+      "name": "Toxicroak",
+      "dex": 454,
+      "form": null,
+      "asset": "/champions-menu-sprites/0454.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/bb/Menu_CP_0454.png"
+    },
+    {
+      "speciesId": "abomasnow",
+      "name": "Abomasnow",
+      "dex": 460,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0460-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/77/Menu_CP_0460-Mega.png"
+    },
+    {
+      "speciesId": "abomasnow",
+      "name": "Abomasnow",
+      "dex": 460,
+      "form": null,
+      "asset": "/champions-menu-sprites/0460.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/21/Menu_CP_0460.png"
+    },
+    {
+      "speciesId": "weavile",
+      "name": "Weavile",
+      "dex": 461,
+      "form": null,
+      "asset": "/champions-menu-sprites/0461.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e8/Menu_CP_0461.png"
+    },
+    {
+      "speciesId": "rhyperior",
+      "name": "Rhyperior",
+      "dex": 464,
+      "form": null,
+      "asset": "/champions-menu-sprites/0464.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/25/Menu_CP_0464.png"
+    },
+    {
+      "speciesId": "leafeon",
+      "name": "Leafeon",
+      "dex": 470,
+      "form": null,
+      "asset": "/champions-menu-sprites/0470.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1a/Menu_CP_0470.png"
+    },
+    {
+      "speciesId": "glaceon",
+      "name": "Glaceon",
+      "dex": 471,
+      "form": null,
+      "asset": "/champions-menu-sprites/0471.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1f/Menu_CP_0471.png"
+    },
+    {
+      "speciesId": "gliscor",
+      "name": "Gliscor",
+      "dex": 472,
+      "form": null,
+      "asset": "/champions-menu-sprites/0472.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a9/Menu_CP_0472.png"
+    },
+    {
+      "speciesId": "mamoswine",
+      "name": "Mamoswine",
+      "dex": 473,
+      "form": null,
+      "asset": "/champions-menu-sprites/0473.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/76/Menu_CP_0473.png"
+    },
+    {
+      "speciesId": "gallade",
+      "name": "Gallade",
+      "dex": 475,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0475-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a3/Menu_CP_0475-Mega.png"
+    },
+    {
+      "speciesId": "gallade",
+      "name": "Gallade",
+      "dex": 475,
+      "form": null,
+      "asset": "/champions-menu-sprites/0475.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/07/Menu_CP_0475.png"
+    },
+    {
+      "speciesId": "froslass",
+      "name": "Froslass",
+      "dex": 478,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0478-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/ab/Menu_CP_0478-Mega.png"
+    },
+    {
+      "speciesId": "froslass",
+      "name": "Froslass",
+      "dex": 478,
+      "form": null,
+      "asset": "/champions-menu-sprites/0478.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/db/Menu_CP_0478.png"
+    },
+    {
+      "speciesId": "rotom-fan",
+      "name": "Rotom-Fan",
+      "dex": 479,
+      "form": "Fan",
+      "asset": "/champions-menu-sprites/0479-fan.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2f/Menu_CP_0479-Fan.png"
+    },
+    {
+      "speciesId": "rotom-frost",
+      "name": "Rotom-Frost",
+      "dex": 479,
+      "form": "Frost",
+      "asset": "/champions-menu-sprites/0479-frost.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/84/Menu_CP_0479-Frost.png"
+    },
+    {
+      "speciesId": "rotom-heat",
+      "name": "Rotom-Heat",
+      "dex": 479,
+      "form": "Heat",
+      "asset": "/champions-menu-sprites/0479-heat.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f2/Menu_CP_0479-Heat.png"
+    },
+    {
+      "speciesId": "rotom-mow",
+      "name": "Rotom-Mow",
+      "dex": 479,
+      "form": "Mow",
+      "asset": "/champions-menu-sprites/0479-mow.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/82/Menu_CP_0479-Mow.png"
+    },
+    {
+      "speciesId": "rotom-wash",
+      "name": "Rotom-Wash",
+      "dex": 479,
+      "form": "Wash",
+      "asset": "/champions-menu-sprites/0479-wash.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/22/Menu_CP_0479-Wash.png"
+    },
+    {
+      "speciesId": "rotom",
+      "name": "Rotom",
+      "dex": 479,
+      "form": null,
+      "asset": "/champions-menu-sprites/0479.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/bf/Menu_CP_0479.png"
+    },
+    {
+      "speciesId": "serperior",
+      "name": "Serperior",
+      "dex": 497,
+      "form": null,
+      "asset": "/champions-menu-sprites/0497.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a9/Menu_CP_0497.png"
+    },
+    {
+      "speciesId": "emboar",
+      "name": "Emboar",
+      "dex": 500,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0500-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6a/Menu_CP_0500-Mega.png"
+    },
+    {
+      "speciesId": "emboar",
+      "name": "Emboar",
+      "dex": 500,
+      "form": null,
+      "asset": "/champions-menu-sprites/0500.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ee/Menu_CP_0500.png"
+    },
+    {
+      "speciesId": "samurott-hisui",
+      "name": "Samurott-Hisui",
+      "dex": 503,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0503-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b6/Menu_CP_0503-Hisui.png"
+    },
+    {
+      "speciesId": "samurott",
+      "name": "Samurott",
+      "dex": 503,
+      "form": null,
+      "asset": "/champions-menu-sprites/0503.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/57/Menu_CP_0503.png"
+    },
+    {
+      "speciesId": "watchog",
+      "name": "Watchog",
+      "dex": 505,
+      "form": null,
+      "asset": "/champions-menu-sprites/0505.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a7/Menu_CP_0505.png"
+    },
+    {
+      "speciesId": "liepard",
+      "name": "Liepard",
+      "dex": 510,
+      "form": null,
+      "asset": "/champions-menu-sprites/0510.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a7/Menu_CP_0510.png"
+    },
+    {
+      "speciesId": "simisage",
+      "name": "Simisage",
+      "dex": 512,
+      "form": null,
+      "asset": "/champions-menu-sprites/0512.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/30/Menu_CP_0512.png"
+    },
+    {
+      "speciesId": "simisear",
+      "name": "Simisear",
+      "dex": 514,
+      "form": null,
+      "asset": "/champions-menu-sprites/0514.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4c/Menu_CP_0514.png"
+    },
+    {
+      "speciesId": "simipour",
+      "name": "Simipour",
+      "dex": 516,
+      "form": null,
+      "asset": "/champions-menu-sprites/0516.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/17/Menu_CP_0516.png"
+    },
+    {
+      "speciesId": "musharna",
+      "name": "Musharna",
+      "dex": 518,
+      "form": null,
+      "asset": "/champions-menu-sprites/0518.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/aa/Menu_CP_0518.png"
+    },
+    {
+      "speciesId": "excadrill",
+      "name": "Excadrill",
+      "dex": 530,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0530-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b1/Menu_CP_0530-Mega.png"
+    },
+    {
+      "speciesId": "excadrill",
+      "name": "Excadrill",
+      "dex": 530,
+      "form": null,
+      "asset": "/champions-menu-sprites/0530.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0c/Menu_CP_0530.png"
+    },
+    {
+      "speciesId": "audino",
+      "name": "Audino",
+      "dex": 531,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0531-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/84/Menu_CP_0531-Mega.png"
+    },
+    {
+      "speciesId": "audino",
+      "name": "Audino",
+      "dex": 531,
+      "form": null,
+      "asset": "/champions-menu-sprites/0531.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0a/Menu_CP_0531.png"
+    },
+    {
+      "speciesId": "conkeldurr",
+      "name": "Conkeldurr",
+      "dex": 534,
+      "form": null,
+      "asset": "/champions-menu-sprites/0534.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1e/Menu_CP_0534.png"
+    },
+    {
+      "speciesId": "scolipede",
+      "name": "Scolipede",
+      "dex": 545,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0545-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ef/Menu_CP_0545-Mega.png"
+    },
+    {
+      "speciesId": "scolipede",
+      "name": "Scolipede",
+      "dex": 545,
+      "form": null,
+      "asset": "/champions-menu-sprites/0545.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/ff/Menu_CP_0545.png"
+    },
+    {
+      "speciesId": "whimsicott",
+      "name": "Whimsicott",
+      "dex": 547,
+      "form": null,
+      "asset": "/champions-menu-sprites/0547.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/69/Menu_CP_0547.png"
+    },
+    {
+      "speciesId": "krookodile",
+      "name": "Krookodile",
+      "dex": 553,
+      "form": null,
+      "asset": "/champions-menu-sprites/0553.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/66/Menu_CP_0553.png"
+    },
+    {
+      "speciesId": "scrafty",
+      "name": "Scrafty",
+      "dex": 560,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0560-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/96/Menu_CP_0560-Mega.png"
+    },
+    {
+      "speciesId": "scrafty",
+      "name": "Scrafty",
+      "dex": 560,
+      "form": null,
+      "asset": "/champions-menu-sprites/0560.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/34/Menu_CP_0560.png"
+    },
+    {
+      "speciesId": "cofagrigus",
+      "name": "Cofagrigus",
+      "dex": 563,
+      "form": null,
+      "asset": "/champions-menu-sprites/0563.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/01/Menu_CP_0563.png"
+    },
+    {
+      "speciesId": "garbodor",
+      "name": "Garbodor",
+      "dex": 569,
+      "form": null,
+      "asset": "/champions-menu-sprites/0569.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/9c/Menu_CP_0569.png"
+    },
+    {
+      "speciesId": "zoroark-hisui",
+      "name": "Zoroark-Hisui",
+      "dex": 571,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0571-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/38/Menu_CP_0571-Hisui.png"
+    },
+    {
+      "speciesId": "zoroark",
+      "name": "Zoroark",
+      "dex": 571,
+      "form": null,
+      "asset": "/champions-menu-sprites/0571.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f3/Menu_CP_0571.png"
+    },
+    {
+      "speciesId": "reuniclus",
+      "name": "Reuniclus",
+      "dex": 579,
+      "form": null,
+      "asset": "/champions-menu-sprites/0579.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ed/Menu_CP_0579.png"
+    },
+    {
+      "speciesId": "vanilluxe",
+      "name": "Vanilluxe",
+      "dex": 584,
+      "form": null,
+      "asset": "/champions-menu-sprites/0584.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/68/Menu_CP_0584.png"
+    },
+    {
+      "speciesId": "emolga",
+      "name": "Emolga",
+      "dex": 587,
+      "form": null,
+      "asset": "/champions-menu-sprites/0587.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c3/Menu_CP_0587.png"
+    },
+    {
+      "speciesId": "eelektross",
+      "name": "Eelektross",
+      "dex": 604,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0604-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f5/Menu_CP_0604-Mega.png"
+    },
+    {
+      "speciesId": "eelektross",
+      "name": "Eelektross",
+      "dex": 604,
+      "form": null,
+      "asset": "/champions-menu-sprites/0604.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/32/Menu_CP_0604.png"
+    },
+    {
+      "speciesId": "chandelure",
+      "name": "Chandelure",
+      "dex": 609,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0609-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/40/Menu_CP_0609-Mega.png"
+    },
+    {
+      "speciesId": "chandelure",
+      "name": "Chandelure",
+      "dex": 609,
+      "form": null,
+      "asset": "/champions-menu-sprites/0609.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/29/Menu_CP_0609.png"
+    },
+    {
+      "speciesId": "beartic",
+      "name": "Beartic",
+      "dex": 614,
+      "form": null,
+      "asset": "/champions-menu-sprites/0614.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/85/Menu_CP_0614.png"
+    },
+    {
+      "speciesId": "stunfisk-galar",
+      "name": "Stunfisk-Galar",
+      "dex": 618,
+      "form": "Galar",
+      "asset": "/champions-menu-sprites/0618-galar.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/20/Menu_CP_0618-Galar.png"
+    },
+    {
+      "speciesId": "stunfisk",
+      "name": "Stunfisk",
+      "dex": 618,
+      "form": null,
+      "asset": "/champions-menu-sprites/0618.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/ed/Menu_CP_0618.png"
+    },
+    {
+      "speciesId": "golurk",
+      "name": "Golurk",
+      "dex": 623,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0623-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/ba/Menu_CP_0623-Mega.png"
+    },
+    {
+      "speciesId": "golurk",
+      "name": "Golurk",
+      "dex": 623,
+      "form": null,
+      "asset": "/champions-menu-sprites/0623.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6f/Menu_CP_0623.png"
+    },
+    {
+      "speciesId": "hydreigon",
+      "name": "Hydreigon",
+      "dex": 635,
+      "form": null,
+      "asset": "/champions-menu-sprites/0635.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6e/Menu_CP_0635.png"
+    },
+    {
+      "speciesId": "volcarona",
+      "name": "Volcarona",
+      "dex": 637,
+      "form": null,
+      "asset": "/champions-menu-sprites/0637.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/19/Menu_CP_0637.png"
+    },
+    {
+      "speciesId": "chesnaught",
+      "name": "Chesnaught",
+      "dex": 652,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0652-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/14/Menu_CP_0652-Mega.png"
+    },
+    {
+      "speciesId": "chesnaught",
+      "name": "Chesnaught",
+      "dex": 652,
+      "form": null,
+      "asset": "/champions-menu-sprites/0652.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a8/Menu_CP_0652.png"
+    },
+    {
+      "speciesId": "delphox",
+      "name": "Delphox",
+      "dex": 655,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0655-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/65/Menu_CP_0655-Mega.png"
+    },
+    {
+      "speciesId": "delphox",
+      "name": "Delphox",
+      "dex": 655,
+      "form": null,
+      "asset": "/champions-menu-sprites/0655.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f3/Menu_CP_0655.png"
+    },
+    {
+      "speciesId": "greninja",
+      "name": "Greninja",
+      "dex": 658,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0658-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/13/Menu_CP_0658-Mega.png"
+    },
+    {
+      "speciesId": "greninja",
+      "name": "Greninja",
+      "dex": 658,
+      "form": null,
+      "asset": "/champions-menu-sprites/0658.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/9d/Menu_CP_0658.png"
+    },
+    {
+      "speciesId": "diggersby",
+      "name": "Diggersby",
+      "dex": 660,
+      "form": null,
+      "asset": "/champions-menu-sprites/0660.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b2/Menu_CP_0660.png"
+    },
+    {
+      "speciesId": "talonflame",
+      "name": "Talonflame",
+      "dex": 663,
+      "form": null,
+      "asset": "/champions-menu-sprites/0663.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/50/Menu_CP_0663.png"
+    },
+    {
+      "speciesId": "vivillon",
+      "name": "Vivillon",
+      "dex": 666,
+      "form": null,
+      "asset": "/champions-menu-sprites/0666.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/12/Menu_CP_0666.png"
+    },
+    {
+      "speciesId": "pyroar",
+      "name": "Pyroar",
+      "dex": 668,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0668-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/fa/Menu_CP_0668-Mega.png"
+    },
+    {
+      "speciesId": "pyroar",
+      "name": "Pyroar",
+      "dex": 668,
+      "form": null,
+      "asset": "/champions-menu-sprites/0668.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/48/Menu_CP_0668.png"
+    },
+    {
+      "speciesId": "floette-eternal",
+      "name": "Floette-Eternal",
+      "dex": 670,
+      "form": "Eternal",
+      "asset": "/champions-menu-sprites/0670-eternal.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1e/Menu_CP_0670-Eternal.png"
+    },
+    {
+      "speciesId": "floette-eternal",
+      "name": "Floette-Eternal",
+      "dex": 670,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0670-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/04/Menu_CP_0670-Mega.png"
+    },
+    {
+      "speciesId": "florges",
+      "name": "Florges",
+      "dex": 671,
+      "form": null,
+      "asset": "/champions-menu-sprites/0671.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/62/Menu_CP_0671.png"
+    },
+    {
+      "speciesId": "pangoro",
+      "name": "Pangoro",
+      "dex": 675,
+      "form": null,
+      "asset": "/champions-menu-sprites/0675.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/68/Menu_CP_0675.png"
+    },
+    {
+      "speciesId": "furfrou",
+      "name": "Furfrou",
+      "dex": 676,
+      "form": null,
+      "asset": "/champions-menu-sprites/0676.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/6d/Menu_CP_0676.png"
+    },
+    {
+      "speciesId": "meowstic",
+      "name": "Meowstic",
+      "dex": 678,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0678-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/83/Menu_CP_0678-Mega.png"
+    },
+    {
+      "speciesId": "meowstic",
+      "name": "Meowstic",
+      "dex": 678,
+      "form": null,
+      "asset": "/champions-menu-sprites/0678.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/dd/Menu_CP_0678.png"
+    },
+    {
+      "speciesId": "aegislash",
+      "name": "Aegislash",
+      "dex": 681,
+      "form": null,
+      "asset": "/champions-menu-sprites/0681.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/15/Menu_CP_0681.png"
+    },
+    {
+      "speciesId": "aromatisse",
+      "name": "Aromatisse",
+      "dex": 683,
+      "form": null,
+      "asset": "/champions-menu-sprites/0683.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/cf/Menu_CP_0683.png"
+    },
+    {
+      "speciesId": "slurpuff",
+      "name": "Slurpuff",
+      "dex": 685,
+      "form": null,
+      "asset": "/champions-menu-sprites/0685.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/fe/Menu_CP_0685.png"
+    },
+    {
+      "speciesId": "malamar",
+      "name": "Malamar",
+      "dex": 687,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0687-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/99/Menu_CP_0687-Mega.png"
+    },
+    {
+      "speciesId": "malamar",
+      "name": "Malamar",
+      "dex": 687,
+      "form": null,
+      "asset": "/champions-menu-sprites/0687.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/da/Menu_CP_0687.png"
+    },
+    {
+      "speciesId": "barbaracle",
+      "name": "Barbaracle",
+      "dex": 689,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0689-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f2/Menu_CP_0689-Mega.png"
+    },
+    {
+      "speciesId": "barbaracle",
+      "name": "Barbaracle",
+      "dex": 689,
+      "form": null,
+      "asset": "/champions-menu-sprites/0689.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/3c/Menu_CP_0689.png"
+    },
+    {
+      "speciesId": "dragalge",
+      "name": "Dragalge",
+      "dex": 691,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0691-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f6/Menu_CP_0691-Mega.png"
+    },
+    {
+      "speciesId": "dragalge",
+      "name": "Dragalge",
+      "dex": 691,
+      "form": null,
+      "asset": "/champions-menu-sprites/0691.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7d/Menu_CP_0691.png"
+    },
+    {
+      "speciesId": "clawitzer",
+      "name": "Clawitzer",
+      "dex": 693,
+      "form": null,
+      "asset": "/champions-menu-sprites/0693.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/8f/Menu_CP_0693.png"
+    },
+    {
+      "speciesId": "heliolisk",
+      "name": "Heliolisk",
+      "dex": 695,
+      "form": null,
+      "asset": "/champions-menu-sprites/0695.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/53/Menu_CP_0695.png"
+    },
+    {
+      "speciesId": "tyrantrum",
+      "name": "Tyrantrum",
+      "dex": 697,
+      "form": null,
+      "asset": "/champions-menu-sprites/0697.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e2/Menu_CP_0697.png"
+    },
+    {
+      "speciesId": "aurorus",
+      "name": "Aurorus",
+      "dex": 699,
+      "form": null,
+      "asset": "/champions-menu-sprites/0699.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/68/Menu_CP_0699.png"
+    },
+    {
+      "speciesId": "sylveon",
+      "name": "Sylveon",
+      "dex": 700,
+      "form": null,
+      "asset": "/champions-menu-sprites/0700.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/d2/Menu_CP_0700.png"
+    },
+    {
+      "speciesId": "hawlucha",
+      "name": "Hawlucha",
+      "dex": 701,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0701-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c3/Menu_CP_0701-Mega.png"
+    },
+    {
+      "speciesId": "hawlucha",
+      "name": "Hawlucha",
+      "dex": 701,
+      "form": null,
+      "asset": "/champions-menu-sprites/0701.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/14/Menu_CP_0701.png"
+    },
+    {
+      "speciesId": "dedenne",
+      "name": "Dedenne",
+      "dex": 702,
+      "form": null,
+      "asset": "/champions-menu-sprites/0702.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c5/Menu_CP_0702.png"
+    },
+    {
+      "speciesId": "goodra-hisui",
+      "name": "Goodra-Hisui",
+      "dex": 706,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0706-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/35/Menu_CP_0706-Hisui.png"
+    },
+    {
+      "speciesId": "goodra",
+      "name": "Goodra",
+      "dex": 706,
+      "form": null,
+      "asset": "/champions-menu-sprites/0706.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/49/Menu_CP_0706.png"
+    },
+    {
+      "speciesId": "klefki",
+      "name": "Klefki",
+      "dex": 707,
+      "form": null,
+      "asset": "/champions-menu-sprites/0707.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/61/Menu_CP_0707.png"
+    },
+    {
+      "speciesId": "trevenant",
+      "name": "Trevenant",
+      "dex": 709,
+      "form": null,
+      "asset": "/champions-menu-sprites/0709.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/96/Menu_CP_0709.png"
+    },
+    {
+      "speciesId": "gourgeist-large",
+      "name": "Gourgeist-Large",
+      "dex": 711,
+      "form": "Large",
+      "asset": "/champions-menu-sprites/0711-large.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/29/Menu_CP_0711-Large.png"
+    },
+    {
+      "speciesId": "gourgeist-small",
+      "name": "Gourgeist-Small",
+      "dex": 711,
+      "form": "Small",
+      "asset": "/champions-menu-sprites/0711-small.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/94/Menu_CP_0711-Small.png"
+    },
+    {
+      "speciesId": "gourgeist",
+      "name": "Gourgeist",
+      "dex": 711,
+      "form": null,
+      "asset": "/champions-menu-sprites/0711.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1b/Menu_CP_0711.png"
+    },
+    {
+      "speciesId": "avalugg-hisui",
+      "name": "Avalugg-Hisui",
+      "dex": 713,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0713-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7b/Menu_CP_0713-Hisui.png"
+    },
+    {
+      "speciesId": "avalugg",
+      "name": "Avalugg",
+      "dex": 713,
+      "form": null,
+      "asset": "/champions-menu-sprites/0713.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/fd/Menu_CP_0713.png"
+    },
+    {
+      "speciesId": "noivern",
+      "name": "Noivern",
+      "dex": 715,
+      "form": null,
+      "asset": "/champions-menu-sprites/0715.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/05/Menu_CP_0715.png"
+    },
+    {
+      "speciesId": "decidueye-hisui",
+      "name": "Decidueye-Hisui",
+      "dex": 724,
+      "form": "Hisui",
+      "asset": "/champions-menu-sprites/0724-hisui.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/84/Menu_CP_0724-Hisui.png"
+    },
+    {
+      "speciesId": "decidueye",
+      "name": "Decidueye",
+      "dex": 724,
+      "form": null,
+      "asset": "/champions-menu-sprites/0724.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/da/Menu_CP_0724.png"
+    },
+    {
+      "speciesId": "incineroar",
+      "name": "Incineroar",
+      "dex": 727,
+      "form": null,
+      "asset": "/champions-menu-sprites/0727.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e0/Menu_CP_0727.png"
+    },
+    {
+      "speciesId": "primarina",
+      "name": "Primarina",
+      "dex": 730,
+      "form": null,
+      "asset": "/champions-menu-sprites/0730.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/62/Menu_CP_0730.png"
+    },
+    {
+      "speciesId": "toucannon",
+      "name": "Toucannon",
+      "dex": 733,
+      "form": null,
+      "asset": "/champions-menu-sprites/0733.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4e/Menu_CP_0733.png"
+    },
+    {
+      "speciesId": "crabominable",
+      "name": "Crabominable",
+      "dex": 740,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0740-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f7/Menu_CP_0740-Mega.png"
+    },
+    {
+      "speciesId": "crabominable",
+      "name": "Crabominable",
+      "dex": 740,
+      "form": null,
+      "asset": "/champions-menu-sprites/0740.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/34/Menu_CP_0740.png"
+    },
+    {
+      "speciesId": "lycanroc-dusk",
+      "name": "Lycanroc-Dusk",
+      "dex": 745,
+      "form": "Dusk",
+      "asset": "/champions-menu-sprites/0745-dusk.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2e/Menu_CP_0745-Dusk.png"
+    },
+    {
+      "speciesId": "lycanroc-midnight",
+      "name": "Lycanroc-Midnight",
+      "dex": 745,
+      "form": "Midnight",
+      "asset": "/champions-menu-sprites/0745-midnight.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/92/Menu_CP_0745-Midnight.png"
+    },
+    {
+      "speciesId": "lycanroc",
+      "name": "Lycanroc",
+      "dex": 745,
+      "form": null,
+      "asset": "/champions-menu-sprites/0745.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b7/Menu_CP_0745.png"
+    },
+    {
+      "speciesId": "toxapex",
+      "name": "Toxapex",
+      "dex": 748,
+      "form": null,
+      "asset": "/champions-menu-sprites/0748.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0a/Menu_CP_0748.png"
+    },
+    {
+      "speciesId": "mudsdale",
+      "name": "Mudsdale",
+      "dex": 750,
+      "form": null,
+      "asset": "/champions-menu-sprites/0750.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b1/Menu_CP_0750.png"
+    },
+    {
+      "speciesId": "araquanid",
+      "name": "Araquanid",
+      "dex": 752,
+      "form": null,
+      "asset": "/champions-menu-sprites/0752.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e7/Menu_CP_0752.png"
+    },
+    {
+      "speciesId": "salazzle",
+      "name": "Salazzle",
+      "dex": 758,
+      "form": null,
+      "asset": "/champions-menu-sprites/0758.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/fb/Menu_CP_0758.png"
+    },
+    {
+      "speciesId": "tsareena",
+      "name": "Tsareena",
+      "dex": 763,
+      "form": null,
+      "asset": "/champions-menu-sprites/0763.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/93/Menu_CP_0763.png"
+    },
+    {
+      "speciesId": "oranguru",
+      "name": "Oranguru",
+      "dex": 765,
+      "form": null,
+      "asset": "/champions-menu-sprites/0765.png",
+      "source": "https://archives.bulbagarden.net/media/upload/e/e4/Menu_CP_0765.png"
+    },
+    {
+      "speciesId": "passimian",
+      "name": "Passimian",
+      "dex": 766,
+      "form": null,
+      "asset": "/champions-menu-sprites/0766.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/5a/Menu_CP_0766.png"
+    },
+    {
+      "speciesId": "mimikyu",
+      "name": "Mimikyu",
+      "dex": 778,
+      "form": null,
+      "asset": "/champions-menu-sprites/0778.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/13/Menu_CP_0778.png"
+    },
+    {
+      "speciesId": "drampa",
+      "name": "Drampa",
+      "dex": 780,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0780-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b0/Menu_CP_0780-Mega.png"
+    },
+    {
+      "speciesId": "drampa",
+      "name": "Drampa",
+      "dex": 780,
+      "form": null,
+      "asset": "/champions-menu-sprites/0780.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c7/Menu_CP_0780.png"
+    },
+    {
+      "speciesId": "kommo-o",
+      "name": "Kommo-o",
+      "dex": 784,
+      "form": null,
+      "asset": "/champions-menu-sprites/0784.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2e/Menu_CP_0784.png"
+    },
+    {
+      "speciesId": "corviknight",
+      "name": "Corviknight",
+      "dex": 823,
+      "form": null,
+      "asset": "/champions-menu-sprites/0823.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/73/Menu_CP_0823.png"
+    },
+    {
+      "speciesId": "flapple",
+      "name": "Flapple",
+      "dex": 841,
+      "form": null,
+      "asset": "/champions-menu-sprites/0841.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/22/Menu_CP_0841.png"
+    },
+    {
+      "speciesId": "appletun",
+      "name": "Appletun",
+      "dex": 842,
+      "form": null,
+      "asset": "/champions-menu-sprites/0842.png",
+      "source": "https://archives.bulbagarden.net/media/upload/6/62/Menu_CP_0842.png"
+    },
+    {
+      "speciesId": "sandaconda",
+      "name": "Sandaconda",
+      "dex": 844,
+      "form": null,
+      "asset": "/champions-menu-sprites/0844.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/5c/Menu_CP_0844.png"
+    },
+    {
+      "speciesId": "polteageist",
+      "name": "Polteageist",
+      "dex": 855,
+      "form": null,
+      "asset": "/champions-menu-sprites/0855.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/36/Menu_CP_0855.png"
+    },
+    {
+      "speciesId": "hatterene",
+      "name": "Hatterene",
+      "dex": 858,
+      "form": null,
+      "asset": "/champions-menu-sprites/0858.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b2/Menu_CP_0858.png"
+    },
+    {
+      "speciesId": "grimmsnarl",
+      "name": "Grimmsnarl",
+      "dex": 861,
+      "form": null,
+      "asset": "/champions-menu-sprites/0861.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4e/Menu_CP_0861.png"
+    },
+    {
+      "speciesId": "mr-rime",
+      "name": "Mr. Rime",
+      "dex": 866,
+      "form": null,
+      "asset": "/champions-menu-sprites/0866.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/4f/Menu_CP_0866.png"
+    },
+    {
+      "speciesId": "runerigus",
+      "name": "Runerigus",
+      "dex": 867,
+      "form": null,
+      "asset": "/champions-menu-sprites/0867.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/bc/Menu_CP_0867.png"
+    },
+    {
+      "speciesId": "alcremie",
+      "name": "Alcremie",
+      "dex": 869,
+      "form": null,
+      "asset": "/champions-menu-sprites/0869.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b2/Menu_CP_0869.png"
+    },
+    {
+      "speciesId": "falinks",
+      "name": "Falinks",
+      "dex": 870,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0870-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/c/c2/Menu_CP_0870-Mega.png"
+    },
+    {
+      "speciesId": "falinks",
+      "name": "Falinks",
+      "dex": 870,
+      "form": null,
+      "asset": "/champions-menu-sprites/0870.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/56/Menu_CP_0870.png"
+    },
+    {
+      "speciesId": "morpeko",
+      "name": "Morpeko",
+      "dex": 877,
+      "form": null,
+      "asset": "/champions-menu-sprites/0877.png",
+      "source": "https://archives.bulbagarden.net/media/upload/b/b2/Menu_CP_0877.png"
+    },
+    {
+      "speciesId": "dragapult",
+      "name": "Dragapult",
+      "dex": 887,
+      "form": null,
+      "asset": "/champions-menu-sprites/0887.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a9/Menu_CP_0887.png"
+    },
+    {
+      "speciesId": "wyrdeer",
+      "name": "Wyrdeer",
+      "dex": 899,
+      "form": null,
+      "asset": "/champions-menu-sprites/0899.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/43/Menu_CP_0899.png"
+    },
+    {
+      "speciesId": "kleavor",
+      "name": "Kleavor",
+      "dex": 900,
+      "form": null,
+      "asset": "/champions-menu-sprites/0900.png",
+      "source": "https://archives.bulbagarden.net/media/upload/4/43/Menu_CP_0900.png"
+    },
+    {
+      "speciesId": "basculegion-f",
+      "name": "Basculegion-F",
+      "dex": 902,
+      "form": "Female",
+      "asset": "/champions-menu-sprites/0902-female.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/8f/Menu_CP_0902-Female.png"
+    },
+    {
+      "speciesId": "basculegion",
+      "name": "Basculegion",
+      "dex": 902,
+      "form": null,
+      "asset": "/champions-menu-sprites/0902.png",
+      "source": "https://archives.bulbagarden.net/media/upload/2/2a/Menu_CP_0902.png"
+    },
+    {
+      "speciesId": "sneasler",
+      "name": "Sneasler",
+      "dex": 903,
+      "form": null,
+      "asset": "/champions-menu-sprites/0903.png",
+      "source": "https://archives.bulbagarden.net/media/upload/7/7b/Menu_CP_0903.png"
+    },
+    {
+      "speciesId": "overqwil",
+      "name": "Overqwil",
+      "dex": 904,
+      "form": null,
+      "asset": "/champions-menu-sprites/0904.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f0/Menu_CP_0904.png"
+    },
+    {
+      "speciesId": "meowscarada",
+      "name": "Meowscarada",
+      "dex": 908,
+      "form": null,
+      "asset": "/champions-menu-sprites/0908.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/17/Menu_CP_0908.png"
+    },
+    {
+      "speciesId": "skeledirge",
+      "name": "Skeledirge",
+      "dex": 911,
+      "form": null,
+      "asset": "/champions-menu-sprites/0911.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/03/Menu_CP_0911.png"
+    },
+    {
+      "speciesId": "quaquaval",
+      "name": "Quaquaval",
+      "dex": 914,
+      "form": null,
+      "asset": "/champions-menu-sprites/0914.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/3b/Menu_CP_0914.png"
+    },
+    {
+      "speciesId": "maushold",
+      "name": "Maushold",
+      "dex": 925,
+      "form": null,
+      "asset": "/champions-menu-sprites/0925.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/52/Menu_CP_0925.png"
+    },
+    {
+      "speciesId": "garganacl",
+      "name": "Garganacl",
+      "dex": 934,
+      "form": null,
+      "asset": "/champions-menu-sprites/0934.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/0c/Menu_CP_0934.png"
+    },
+    {
+      "speciesId": "armarouge",
+      "name": "Armarouge",
+      "dex": 936,
+      "form": null,
+      "asset": "/champions-menu-sprites/0936.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/04/Menu_CP_0936.png"
+    },
+    {
+      "speciesId": "ceruledge",
+      "name": "Ceruledge",
+      "dex": 937,
+      "form": null,
+      "asset": "/champions-menu-sprites/0937.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a4/Menu_CP_0937.png"
+    },
+    {
+      "speciesId": "bellibolt",
+      "name": "Bellibolt",
+      "dex": 939,
+      "form": null,
+      "asset": "/champions-menu-sprites/0939.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/38/Menu_CP_0939.png"
+    },
+    {
+      "speciesId": "scovillain",
+      "name": "Scovillain",
+      "dex": 952,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0952-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/5/52/Menu_CP_0952-Mega.png"
+    },
+    {
+      "speciesId": "scovillain",
+      "name": "Scovillain",
+      "dex": 952,
+      "form": null,
+      "asset": "/champions-menu-sprites/0952.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/d8/Menu_CP_0952.png"
+    },
+    {
+      "speciesId": "espathra",
+      "name": "Espathra",
+      "dex": 956,
+      "form": null,
+      "asset": "/champions-menu-sprites/0956.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a3/Menu_CP_0956.png"
+    },
+    {
+      "speciesId": "tinkaton",
+      "name": "Tinkaton",
+      "dex": 959,
+      "form": null,
+      "asset": "/champions-menu-sprites/0959.png",
+      "source": "https://archives.bulbagarden.net/media/upload/d/d3/Menu_CP_0959.png"
+    },
+    {
+      "speciesId": "palafin",
+      "name": "Palafin",
+      "dex": 964,
+      "form": null,
+      "asset": "/champions-menu-sprites/0964.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/04/Menu_CP_0964.png"
+    },
+    {
+      "speciesId": "orthworm",
+      "name": "Orthworm",
+      "dex": 968,
+      "form": null,
+      "asset": "/champions-menu-sprites/0968.png",
+      "source": "https://archives.bulbagarden.net/media/upload/9/96/Menu_CP_0968.png"
+    },
+    {
+      "speciesId": "glimmora",
+      "name": "Glimmora",
+      "dex": 970,
+      "form": "Mega",
+      "asset": "/champions-menu-sprites/0970-mega.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/3b/Menu_CP_0970-Mega.png"
+    },
+    {
+      "speciesId": "glimmora",
+      "name": "Glimmora",
+      "dex": 970,
+      "form": null,
+      "asset": "/champions-menu-sprites/0970.png",
+      "source": "https://archives.bulbagarden.net/media/upload/f/f8/Menu_CP_0970.png"
+    },
+    {
+      "speciesId": "houndstone",
+      "name": "Houndstone",
+      "dex": 972,
+      "form": null,
+      "asset": "/champions-menu-sprites/0972.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/01/Menu_CP_0972.png"
+    },
+    {
+      "speciesId": "annihilape",
+      "name": "Annihilape",
+      "dex": 979,
+      "form": null,
+      "asset": "/champions-menu-sprites/0979.png",
+      "source": "https://archives.bulbagarden.net/media/upload/0/09/Menu_CP_0979.png"
+    },
+    {
+      "speciesId": "farigiraf",
+      "name": "Farigiraf",
+      "dex": 981,
+      "form": null,
+      "asset": "/champions-menu-sprites/0981.png",
+      "source": "https://archives.bulbagarden.net/media/upload/8/8b/Menu_CP_0981.png"
+    },
+    {
+      "speciesId": "kingambit",
+      "name": "Kingambit",
+      "dex": 983,
+      "form": null,
+      "asset": "/champions-menu-sprites/0983.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a6/Menu_CP_0983.png"
+    },
+    {
+      "speciesId": "gholdengo",
+      "name": "Gholdengo",
+      "dex": 1000,
+      "form": null,
+      "asset": "/champions-menu-sprites/1000.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/ad/Menu_CP_1000.png"
+    },
+    {
+      "speciesId": "sinistcha",
+      "name": "Sinistcha",
+      "dex": 1013,
+      "form": null,
+      "asset": "/champions-menu-sprites/1013.png",
+      "source": "https://archives.bulbagarden.net/media/upload/3/39/Menu_CP_1013.png"
+    },
+    {
+      "speciesId": "archaludon",
+      "name": "Archaludon",
+      "dex": 1018,
+      "form": null,
+      "asset": "/champions-menu-sprites/1018.png",
+      "source": "https://archives.bulbagarden.net/media/upload/a/a0/Menu_CP_1018.png"
+    },
+    {
+      "speciesId": "hydrapple",
+      "name": "Hydrapple",
+      "dex": 1019,
+      "form": null,
+      "asset": "/champions-menu-sprites/1019.png",
+      "source": "https://archives.bulbagarden.net/media/upload/1/1c/Menu_CP_1019.png"
+    }
+  ]
+}

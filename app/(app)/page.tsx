@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, FormEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowUp,
   BarChart2,
@@ -39,6 +40,7 @@ import {
   Zap,
   RotateCcw,
   X,
+  Radio,
 } from "lucide-react";
 import { answerCoachQuestion, applyCoachRecommendation, baseCoachQuestion, CoachAnswer, CoachRecommendation, moveIsSpread } from "../../lib/coach";
 import { BuildAssistBubble } from "../components/BuildAssistBubble";
@@ -93,6 +95,29 @@ const NATURE_CHART = [
   ["Timid", "Hasty", "Jolly", "Naive", "Serious"],
 ] as const;
 const STAT_KEYS = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as const satisfies readonly StatKey[];
+
+function normalizeStoredBuild(value: unknown): PokemonBuild | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Partial<PokemonBuild>;
+  if (typeof raw.species !== "string" || !raw.species.trim()) return null;
+  const rawEvs = raw.evs && typeof raw.evs === "object" ? raw.evs : {};
+  const evs = Object.fromEntries(STAT_KEYS.map((stat) => {
+    const value = Number((rawEvs as Partial<Record<StatKey, unknown>>)[stat]);
+    return [stat, Number.isFinite(value) ? value : 0];
+  })) as PokemonBuild["evs"];
+  const moves = Array.isArray(raw.moves)
+    ? raw.moves.filter((move): move is string => typeof move === "string").slice(0, 4)
+    : [];
+  return {
+    id: typeof raw.id === "string" && raw.id ? raw.id : `${raw.species}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    species: raw.species,
+    item: typeof raw.item === "string" ? raw.item : "",
+    ability: typeof raw.ability === "string" ? raw.ability : "",
+    nature: typeof raw.nature === "string" ? raw.nature : "",
+    moves: [...moves, "", "", ""].slice(0, 4),
+    evs,
+  };
+}
 
 function sanitizeStatPointDigits(input: string): string {
   return input.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
@@ -251,9 +276,12 @@ export default function Home() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
     try {
-      const parsed = JSON.parse(saved) as PokemonBuild[];
-      setTeam(parsed);
-      setSelectedId(parsed[0]?.id ?? null);
+      const parsed = JSON.parse(saved);
+      const normalized = Array.isArray(parsed)
+        ? parsed.map(normalizeStoredBuild).filter((build): build is PokemonBuild => Boolean(build)).slice(0, 6)
+        : [];
+      setTeam(normalized);
+      setSelectedId(normalized[0]?.id ?? null);
     } catch {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -269,8 +297,16 @@ export default function Home() {
     const activeId = localStorage.getItem(ACTIVE_SAVED_TEAM_KEY);
     if (saved) {
       try {
-        const parsed = JSON.parse(saved) as SavedTeam[];
-        if (Array.isArray(parsed)) setSavedTeams(parsed);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const normalized = parsed
+            .filter((entry): entry is SavedTeam => Boolean(entry && typeof entry.id === "string" && typeof entry.name === "string" && Array.isArray(entry.pokemon)))
+            .map((entry) => ({
+              ...entry,
+              pokemon: entry.pokemon.map(normalizeStoredBuild).filter((build): build is PokemonBuild => Boolean(build)).slice(0, 6),
+            }));
+          setSavedTeams(normalized);
+        }
       } catch {
         localStorage.removeItem(SAVED_TEAMS_KEY);
       }
@@ -481,6 +517,9 @@ export default function Home() {
           <ChevronDown size={14} />
         </div>
         <div className="header-actions">
+          <Link className="ghost-button battle-launch-button" href="/battle-companion">
+            <Radio size={16} /> Battle Companion
+          </Link>
           <button className="ghost-button library-button" type="button" onClick={() => setTeamLibraryOpen(true)}>
             <FolderOpen size={16} /> My teams
             {savedTeams.length > 0 && <span className="saved-team-count">{savedTeams.length}</span>}

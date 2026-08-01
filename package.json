@@ -7,11 +7,20 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "data:champions": "node scripts/generate-champions-catalog.mjs"
+    "data:champions": "node scripts/generate-champions-catalog.mjs",
+    "data:battle-references": "node scripts/generate-battle-reference-manifest.mjs",
+    "data:champions-sprites": "node scripts/download-champions-menu-sprites.mjs",
+    "data:battle-embeddings": "node scripts/generate-battle-reference-embeddings.mjs"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@livekit/components-react": "^2.9.23",
+    "@techstark/opencv-js": "^5.0.0-release.1",
+    "livekit-client": "^2.20.1",
+    "livekit-server-sdk": "^2.17.0",
     "lucide-react": "^0.468.0",
     "next": "^15.1.4",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

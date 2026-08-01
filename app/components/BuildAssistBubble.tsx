@@ -450,6 +450,18 @@ export function BuildAssistBubble({
                   const turnActions = isStreamingAssistant
                     ? streamingActions
                     : turn.actions ?? [];
+                  const turnConversationText = turns.slice(0, turnIndex + 1).map((entry) => entry.content).filter(Boolean).join("\n");
+                  const replacementTargets = new Set(
+                    turnActions
+                      .filter((pending): pending is BuildAssistPendingAction & { action: Extract<BuildAssistAction, { type: "add_pokemon" }> } => pending.action.type === "add_pokemon")
+                      .map((pending) => pending.action.replaces ?? findTeamReplacementTarget(turnConversationText, team, pending.action.pokemon))
+                      .filter((species): species is string => Boolean(species))
+                      .map((species) => species.toLowerCase()),
+                  );
+                  const visibleTurnActions = turnActions.filter((pending) => (
+                    pending.action.type !== "update_set"
+                    || !replacementTargets.has(pending.action.pokemon.toLowerCase())
+                  ));
 
                   return (
                     <Fragment key={`turn-${turnIndex}`}>
@@ -459,13 +471,13 @@ export function BuildAssistBubble({
                           {content ? <p>{content}</p> : null}
                         </article>
                       ) : null}
-                      {turnActions.map((pending) => (
+                      {visibleTurnActions.map((pending) => (
                         <BuildAssistActionCard
                           key={pending.id}
                           pending={pending}
                           team={team}
                           selectedId={selectedId}
-                          conversationText={turns.slice(0, turnIndex + 1).map((entry) => entry.content).filter(Boolean).join("\n")}
+                          conversationText={turnConversationText}
                           streaming={isStreamingAssistant && pending.id.startsWith("stream-")}
                           onApply={() => applyAction(turnIndex, pending)}
                           onRemove={pending.appliedPokemonId ? () => {
@@ -539,6 +551,10 @@ function BuildAssistActionCard({ pending, team, selectedId, conversationText = "
   const isApplied = Boolean(pending.appliedPokemonId);
   const disabledReason = actionDisabledReason(action, team, selectedData, Boolean(selectedBuild), isApplied, conversationText);
   const isSetCard = Boolean(setCardAction);
+  const replacementTarget = action.type === "add_pokemon"
+    ? action.replaces ?? findTeamReplacementTarget(conversationText, team, action.pokemon)
+    : null;
+  const isReplacement = Boolean(replacementTarget);
 
   return (
     <article className={`build-assist-action-card${isApplied ? " applied" : ""}${streaming ? " streaming" : ""}`}>
@@ -553,8 +569,8 @@ function BuildAssistActionCard({ pending, team, selectedId, conversationText = "
                 />
               ) : <Sparkles size={24} />}
               <div className="build-assist-action-title">
-                <small>{isApplied ? "Applied to team" : streaming ? "Building set…" : "Suggested change"}</small>
-                <strong>{actionLabel(action, pokemon)}</strong>
+                <small>{isApplied ? "Applied to team" : streaming ? "Building set…" : isReplacement ? "Suggested replacement" : "Suggested change"}</small>
+                <strong>{actionLabel(action, pokemon, replacementTarget)}</strong>
               </div>
             </div>
             <div className="build-assist-action-body">
@@ -597,7 +613,7 @@ function BuildAssistActionCard({ pending, team, selectedId, conversationText = "
             {isApplied ? (
               <button className="danger-action" type="button" onClick={onRemove}>Remove</button>
             ) : (
-              <button type="button" onClick={onApply} disabled={Boolean(disabledReason)}>Apply</button>
+              <button type="button" onClick={onApply} disabled={Boolean(disabledReason)}>{isReplacement ? "Replace" : "Apply"}</button>
             )}
           </>
         ) : null}
@@ -647,7 +663,7 @@ function SetPreview({ action, pokemon }: {
   );
 }
 
-function actionLabel(action: BuildAssistAction, pokemon: typeof POKEMON[number] | null = null) {
+function actionLabel(action: BuildAssistAction, pokemon: typeof POKEMON[number] | null = null, replacementTarget: string | null = null) {
   if (action.type === "add_pokemon") {
     const megaForm = action.megaForm
       ? pokemon?.megaForms?.find((form) => form.name === action.megaForm)
@@ -655,7 +671,7 @@ function actionLabel(action: BuildAssistAction, pokemon: typeof POKEMON[number] 
     const label = megaForm
       ? formatMegaDisplayName(pokemon?.name ?? action.pokemon, megaForm.name)
       : action.pokemon;
-    if (action.replaces?.trim()) return `Replace ${action.replaces} with ${label}`;
+    if (replacementTarget?.trim()) return `Replace ${replacementTarget} with ${label}`;
     return `Add ${label}`;
   }
   if (action.type === "update_set") {
